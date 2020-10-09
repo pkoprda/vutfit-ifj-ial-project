@@ -8,3 +8,6 @@ all: $(BIN)
 
 $(BIN): $(SOURCE)
 	$(CC) $(SOURCE) $(CFLAGS) -DDEBUG -g -o $(BIN)
+
+test:
+	@./test.sh

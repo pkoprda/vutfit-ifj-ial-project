@@ -1,0 +1,4 @@
+/* Toto je
+viacradkovy
+komentar
+*/

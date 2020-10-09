@@ -1,0 +1,37 @@
+typedef enum {
+    START,
+    COMMENTS,
+    IDENTIF,
+    NUMBER,
+    STRING,
+    OPERATORS,
+
+    VAR_DEF,
+    VAR_INIT,
+    PLUS,
+    MINUS,
+    MUL,
+    DIV,
+    LESS,
+    LESS_EQUAL,
+    MORE,
+    MORE_EQUAL,
+    EQUAL,
+    NOT_EQUAL,
+
+    COMMA,
+    ROUND_LBRACKET,
+    ROUND_RBRACKET,
+    CURLY_LBRACKET,
+    CURLY_RBRACKET,
+    
+    KEYWORD_PACKAGE,
+    KEYWORD_IF,
+    KEYWORD_ELSE,
+    KEYWORD_FOR,
+    KEYWORD_FUNC,
+    KEYWORD_INT,
+    KEYWORD_FLOAT64,
+    KEYWORD_STRING,
+    KEYWORD_RETURN
+} Types;
