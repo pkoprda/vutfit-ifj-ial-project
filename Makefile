@@ -10,7 +10,7 @@ $(BIN): $(SOURCE)
 	$(CC) $(SOURCE) $(CFLAGS) -DDEBUG -g -o $(BIN)
 
 test:
-	$(CC) $(SOURCE) $(CFLAGS) -DDEBUG -g -o $(BIN)
+	$(CC) $(SOURCE) $(CFLAGS) -o $(BIN)
 	@./test.sh
 
 clean:

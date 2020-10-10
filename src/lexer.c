@@ -2,40 +2,49 @@
 
 
 int lexer(){
-    char c;
-    int stav = START;
+    char c, *buffer;
+    int stav = STATE_START;
     while(!feof(stdin)){
         
         c = getc(stdin);
-                
+
         switch(stav){
 
             // pociatocny stav automatu
-            case START:
+            case STATE_START:
 
                 // prazdne riadky preskakujem
-                if(c == '\n' || c == ' ' || c == EOF);
+                if(c == '\n' || c == '\t' || c == ' ' || c == EOF);
 
                 // delenie alebo komentar
                 else if(c == '/'){
                     c = getc(stdin);
                     if(c == '/' || c == '*'){
                         ungetc(c,stdin);
-                        stav = COMMENTS;
+                        stav = STATE_COMMENTS;
                     } else{
                         ungetc(c,stdin);
-                        initToken(DIV, NULL);
+                        initToken(TOKEN_DIV, NULL);
                     }
                 }
 
                 // identifikator alebo klucove slovo             
-                else if(isalpha(c) || c == '_') stav = IDENTIF;
+                else if(isalpha(c) || c == '_') {
+                    ungetc(c, stdin);
+                    stav = STATE_IDENTIF;
+                }
 
                 // cislo - int alebo float64
-                else if(isdigit(c)) stav = NUMBER;
+                else if(isdigit(c)) {
+                    ungetc(c, stdin);
+                    stav = STATE_NUMBER;
+                }
 
                 // zaciatok stringu
-                else if(c == '"') stav = STRING;
+                else if(c == '"') {
+                    ungetc(c, stdin);
+                    stav = STATE_STRING;
+                }
 
                 // definicia premennej
                 else if(c == ':'){
@@ -47,27 +56,27 @@ int lexer(){
                 }
 
                 // operatory
-                else if(c == '+') initToken(PLUS, NULL);
-                else if(c == '-') initToken(MINUS, NULL);
-                else if(c == '*') initToken(MUL, NULL);
+                else if(c == '+') initToken(TOKEN_PLUS, NULL);
+                else if(c == '-') initToken(TOKEN_MINUS, NULL);
+                else if(c == '*') initToken(TOKEN_MUL, NULL);
                 else if(c == '<'){
                     c = getc(stdin);
                     if(c == '='){
-                        initToken(LESS_EQUAL, NULL);
+                        initToken(TOKEN_LESS_EQUAL, NULL);
                     }
                     ungetc(c,stdin);
-                    initToken(LESS, NULL);
+                    initToken(TOKEN_LESS, NULL);
                 } else if(c == '>'){
                     c = getc(stdin);
                     if(c == '='){
-                        initToken(MORE_EQUAL, NULL);
+                        initToken(TOKEN_MORE_EQUAL, NULL);
                     }
                     ungetc(c,stdin);
-                    initToken(MORE, NULL);
+                    initToken(TOKEN_MORE, NULL);
                 } else if(c == '='){
                     c = getc(stdin);
                     if(c == '='){
-                        initToken(EQUAL, NULL);
+                        initToken(TOKEN_EQUAL, NULL);
                     }
                     // inicializacia premennej
                     ungetc(c,stdin);
@@ -75,31 +84,34 @@ int lexer(){
                 } else if(c == '!'){
                     c = getc(stdin);
                     if(c == '='){
-                        initToken(NOT_EQUAL, NULL);
+                        initToken(TOKEN_NOT_EQUAL, NULL);
                     }
                     error_exit(LEX_ERROR,"Lexikalna chyba!");
                 }
                 
                 // oddelovace
-                else if(c == ',') initToken(COMMA, NULL);
-                else if(c == ';') initToken(SEMICOLON, NULL);
-                else if(c == '(') initToken(ROUND_LBRACKET, NULL);
-                else if(c == ')') initToken(ROUND_RBRACKET, NULL);
-                else if(c == '{') initToken(CURLY_LBRACKET, NULL);
-                else if(c == '}') initToken(CURLY_RBRACKET, NULL);
+                else if(c == ',') initToken(TOKEN_COMMA, NULL);
+                else if(c == ';') initToken(TOKEN_SEMICOLON, NULL);
+                else if(c == '(') initToken(TOKEN_ROUND_LBRACKET, NULL);
+                else if(c == ')') initToken(TOKEN_ROUND_RBRACKET, NULL);
+                else if(c == '{') initToken(TOKEN_CURLY_LBRACKET, NULL);
+                else if(c == '}') initToken(TOKEN_CURLY_RBRACKET, NULL);
 
                 // nezname znaky
-                else { error_exit(LEX_ERROR,"Lexikalna chyba!"); }
+                else { 
+                    debug_print("\n%c %d",c,c);
+                    error_exit(LEX_ERROR,"Lexikalna chyba!"); 
+                }
 
                 break;
 
             // riadkove a blokove komentare
-            case COMMENTS:
+            case STATE_COMMENTS:
 
                 if(c == '/'){
                     // Jednoriadkovy komentar
                     while((c = getc(stdin)) != '\n');
-                    stav = START;
+                    stav = STATE_START;
                 } else if (c == '*'){
                     // Blokovy komentar
                     char nextChar;
@@ -112,19 +124,68 @@ int lexer(){
                 }
                 break;
 
-            case IDENTIF:
-                initBuffer();
+            case STATE_IDENTIF:
                 ungetc(c, stdin);
+                buffer = initBuffer();
+                buffer = loadWord(buffer);
+
+                // keywordy a funkcie
+                if(MIN_LEN_KEYWORD <= strlen(buffer) && strlen(buffer) <= MAX_LEN_KEYWORD){
+                    if(!strcmp(buffer, "else"))           initToken(KEYWORD_ELSE, NULL);
+                    else if(!strcmp(buffer, "float64"))   initToken(KEYWORD_FLOAT64, NULL);
+                    else if(!strcmp(buffer, "for"))       initToken(KEYWORD_FOR, NULL); 
+                    else if(!strcmp(buffer, "func"))      initToken(KEYWORD_FUNC, NULL);
+                    else if(!strcmp(buffer, "if"))        initToken(KEYWORD_IF, NULL);
+                    else if(!strcmp(buffer, "int"))       initToken(KEYWORD_INT, NULL);
+                    else if(!strcmp(buffer, "package"))   initToken(KEYWORD_PACKAGE, NULL);
+                    else if(!strcmp(buffer, "return"))    initToken(KEYWORD_RETURN, NULL);
+                    else if(!strcmp(buffer, "string"))    initToken(KEYWORD_STRING, NULL);
+                    else if(!strcmp(buffer, "inputs"))    initToken(FUNC_INPUTS, NULL);
+                    else if(!strcmp(buffer, "inputi"))    initToken(FUNC_INPUTI, NULL);
+                    else if(!strcmp(buffer, "inputf"))    initToken(FUNC_INPUTF, NULL);
+                    else if(!strcmp(buffer, "print"))     initToken(FUNC_PRINT, NULL);
+                    else if(!strcmp(buffer, "int2float")) initToken(FUNC_INT2FLOAT, NULL);
+                    else if(!strcmp(buffer, "float2int")) initToken(FUNC_FLOAT2INT, NULL);
+                    else if(!strcmp(buffer, "len"))       initToken(FUNC_LEN, NULL);
+                    else if(!strcmp(buffer, "substr"))    initToken(FUNC_SUBSTR, NULL);
+                    else if(!strcmp(buffer, "ord"))       initToken(FUNC_ORD, NULL);
+                    else if(!strcmp(buffer, "chr"))       initToken(FUNC_CHR, NULL);
+                    else{
+                        // identifikator
+                        initToken(TOKEN_IDENTIF, buffer);
+                        debug_print("IDENTIFIER: %s", buffer);
+                        break; 
+                    }
+                    debug_print("KEYWORD: %s", buffer);
+                } 
+                
+                // identifikator
+                else{
+                    initToken(TOKEN_IDENTIF, buffer);
+                    debug_print("IDENTIFIER: %s", buffer);
+                }
+                stav = STATE_START;
                 break;
 
-            case NUMBER:
+            case STATE_NUMBER:
+                ungetc(c, stdin);          
+                buffer = initBuffer();
+                buffer = loadNumber(buffer);
+                initToken(TOKEN_INT, buffer);
+                debug_print("NUMBER: %s", buffer);
+                stav = STATE_START;
                 break;
             
-            case STRING:
+            case STATE_STRING:
+                buffer = initBuffer();
                 while(1){   
+                    c = getc(stdin);
 
                     // koniec stringu
-                    if(c == '"'){ break;}
+                    if(c == '"'){ 
+                        stav = STATE_START;
+                        break;
+                    }
                     
                     // ASCII hodnota mensia ako 32
                     else if(c < 32){
@@ -157,11 +218,7 @@ int lexer(){
                             error_exit(LEX_ERROR,"Lexikalna chyba!");
                         } 
                     }
-                    c = getc(stdin);
                 }
-                break;
-
-            case OPERATORS:
                 break;
 
             default:
