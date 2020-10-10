@@ -10,4 +10,8 @@ $(BIN): $(SOURCE)
 	$(CC) $(SOURCE) $(CFLAGS) -DDEBUG -g -o $(BIN)
 
 test:
+	$(CC) $(SOURCE) $(CFLAGS) -DDEBUG -g -o $(BIN)
 	@./test.sh
+
+clean:
+	rm bin/main

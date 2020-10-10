@@ -4,8 +4,11 @@
 
 ### Základy
 
-- Preklad pomocou `make`
-- Spustenie napr. pomocou `bin/main <tests/test.go`
+- `make` - preloží program
+- `make test` - preloží a spustí všetky testy
+- `make clean` - vymaže vygenerované súbory
+
+- Spustenie napr. pomocou `bin/main <tests/test-comments1.go`
 - Používajte na printovanie na stderr funkciu **debug_print()**
 - Používajte návratové hodnoty prekladača definované v súbore `error.h` 
 - Súbor `libmine.h` je určená pre definíciu našich pomocných funkcií
