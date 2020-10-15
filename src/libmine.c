@@ -1,14 +1,19 @@
 #include "libmine.h"
 
-char* initBuffer(){
-    char* buffer = (char*) calloc(LINE_BUFF_LEN, LINE_BUFF_LEN * sizeof(char));
+string* initBuffer(){
+    string* buffer = (string*) calloc(LINE_BUFF_LEN, LINE_BUFF_LEN * sizeof(char));
     if(!buffer){
         error_exit(INTERNAL_ERROR, "Chyba alokacie pamäti!");
     }
     return buffer;
 }
 
-void freeBuffer(char* buffer){
+void clearBuffer(string* buffer){
+    buffer->length = 0;
+    buffer->str[0] = '\0';
+}
+
+void freeBuffer(string* buffer){
     free(buffer);
     buffer = NULL;
 }
@@ -23,69 +28,26 @@ TokenPtr initToken(int type, char* value){
     return token;
 }
 
-char* loadWord(char* bufferPtr){
-    char *bufferStart = bufferPtr;
-    char c;
-    char *bufferNew;
-    size_t lenLineMax = LINE_BUFF_LEN, len = lenLineMax;
-
-    // prvy charakter moze byt iba pismeno alebo podtrzitko
-    c = getc(stdin);
-    *bufferPtr = c;
-    bufferPtr++;
-    
-    while(1){
-        c = getc(stdin);
-        if(isalpha(c) || isdigit(c) || c == '_'){
-            if(--len == 0){
-                len = lenLineMax;
-                bufferNew = (char*) realloc(bufferStart, lenLineMax *= 2);
-                if(!bufferNew){
-                    free(bufferStart);
-                    error_exit(INTERNAL_ERROR, "Chyba alokacie pamäti!");
-                }
-
-                bufferPtr = bufferNew + (bufferPtr - bufferStart);
-                bufferStart = bufferNew;
-            }
-            *bufferPtr = c;
-            bufferPtr++;
-        } else { break;}
+void initString(string* s){
+    s->str = (char*) malloc(sizeof(char) * SIZE_STRING_INC);
+    if(!s->str){
+        error_exit(INTERNAL_ERROR,"Chyba alokacie pameti!");
     }
-
-    *bufferPtr = '\0';
-    return bufferStart;
+    s->str[0] = '\0';
+    s->length = 0;
+    s->allocSize = SIZE_STRING_INC;
 }
 
-char* loadNumber(char *bufferPtr){
-    char *bufferStart = bufferPtr;
-    char c;
-    char *bufferNew;
-    size_t lenLineMax = LINE_BUFF_LEN, len = lenLineMax;
-
-    c = getc(stdin);
-    *bufferPtr = c;
-    bufferPtr++;
-
-    while(1){
-        c = getc(stdin);
-        if(isdigit(c)){
-            if(--len == 0){
-                len = lenLineMax;
-                bufferNew = (char*) realloc(bufferStart, lenLineMax *= 2);
-                if(!bufferNew){
-                    free(bufferStart);
-                    error_exit(INTERNAL_ERROR, "Chyba alokacie pamäti!");
-                }
-
-                bufferPtr = bufferNew + (bufferPtr - bufferStart);
-                bufferStart = bufferNew;
-            }
-            *bufferPtr = c;
-            bufferPtr++;
-        } else { break;}
+string* addChar(string* s, char c){
+    if(s->length + 1 >= s->allocSize){
+        s->str = (char*) realloc(s->str, s->length + SIZE_STRING_INC);
+        if(!s->str){
+            error_exit(INTERNAL_ERROR,"Chyba alokacie pameti!");
+        }
+        s->allocSize = s->length + SIZE_STRING_INC;
     }
-
-    *bufferPtr = '\0';
-    return bufferStart;
+    s->str[s->length] = c;
+    s->length++;
+    s->str[s->length] = '\0';
+    return s;
 }

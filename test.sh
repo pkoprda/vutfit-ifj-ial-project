@@ -7,7 +7,7 @@ COUNT_ALL=0
 COUNT_OK=0
 COUNT_FALSE=0
 
-for n in $(ls -p tests/ | grep -E -i '^test-.+\.go$')
+for n in $(ls -p tests/ | grep -E -i '^.+\.go$')
 do
     ((COUNT_ALL+=1))
     name=${n::-3}

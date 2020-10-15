@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdbool.h>
 #include "error.h"
 
 #ifdef DEBUG
@@ -10,6 +11,7 @@
 #define debug_print(M, ...)
 #endif
 
+#define SIZE_STRING_INC 8
 #define LINE_BUFF_LEN 128
 #define MIN_LEN_KEYWORD 2
 #define MAX_LEN_KEYWORD 10
@@ -21,7 +23,8 @@
 typedef enum {
 
     // stavy automatu
-    STATE_START, STATE_COMMENTS, STATE_IDENTIF, STATE_NUMBER, STATE_STRING,
+    STATE_START, STATE_COMMENTS, STATE_IDENTIF, STATE_STRING,
+    STATE_NUMBER, STATE_FLOAT_NUMBER, STATE_EXPONENT_NUMBER, STATE_EXPONENT_NUMBER_FINAL,
 
     // identifikator, definicia, inicializacia
     TOKEN_IDENTIF, IDENTIF_DEF, IDENTIF_INIT,
@@ -54,9 +57,17 @@ typedef struct tToken {
     char* value;
 } *TokenPtr;
 
+
+typedef struct{
+    char* str;
+    unsigned int length;
+    unsigned int allocSize;
+} string;
+
 int lexer();
-char* initBuffer();
-void freeBuffer(char* buffer);
+string* initBuffer();
+void clearBuffer(string* buffer);
+void freeBuffer(string* buffer);
 TokenPtr initToken(int type, char* value);
-char* loadWord(char* buffer);
-char* loadNumber(char* buffer);
+string* addChar(string* buffer, char c);
+void initString(string* s);
