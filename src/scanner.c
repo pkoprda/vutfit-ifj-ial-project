@@ -2,7 +2,7 @@
 
 
 int lexer(){
-    char c; //*buffer; //*bufferStart, *bufferNew;
+    char c, firstDigit; //*buffer; //*bufferStart, *bufferNew;
     //size_t lenLineMax, len;
     int stav = STATE_START;
     string bufferHelp;
@@ -11,14 +11,26 @@ int lexer(){
     while(!feof(stdin)){
         
         c = getc(stdin);
-
         switch(stav){
 
             // pociatocny stav automatu
             case STATE_START:
 
-                // prazdne riadky preskakujem
-                if(c == '\n' || c == '\r' || c == '\t' || c == ' ' || c == EOF);
+                // \r iba pre suboru s CRLF
+                if(c == '\r' || c == EOF);
+
+                // novy riadok
+                else if(c == '\n') { 
+                    debug_print("EOL");
+                    initToken(TOKEN_EOL, NULL); 
+                }
+
+                // medzera
+                else if(c == ' ' || c == '\t') { 
+                    debug_print("WHITESPACE");    
+                    initToken(TOKEN_WHITESPACE, NULL); 
+                }
+                
 
                 // delenie alebo komentar
                 else if(c == '/'){
@@ -28,6 +40,7 @@ int lexer(){
                         stav = STATE_COMMENTS;
                     } else{
                         ungetc(c,stdin);
+                        debug_print("DIVISION");
                         initToken(TOKEN_DIV, NULL);
                     }
                 }
@@ -42,10 +55,10 @@ int lexer(){
 
                 // cislo - int alebo float64
                 else if(isdigit(c)) {
-                    ungetc(c, stdin);
-                    
+                    firstDigit = c;
                     initString(buffer);
                     buffer = initBuffer();
+                    addChar(buffer, c);
                     stav = STATE_NUMBER;
                 }
 
@@ -62,6 +75,7 @@ int lexer(){
                 else if(c == ':'){
                     c = getc(stdin);
                     if(c == '='){
+                        debug_print("IDENTIF_DEF");
                         initToken(IDENTIF_DEF, NULL);
                     } else{
                         error_exit(LEX_ERROR,"Lexikalna chyba!");
@@ -70,40 +84,56 @@ int lexer(){
                 }
 
                 // operatory
-                else if(c == '+') initToken(TOKEN_PLUS, NULL);
-                else if(c == '-') initToken(TOKEN_MINUS, NULL);
-                else if(c == '*') initToken(TOKEN_MUL, NULL);
+                else if(c == '+'){
+                    debug_print("PLUS");
+                    initToken(TOKEN_PLUS, NULL);
+                }
+                else if(c == '-'){
+                    debug_print("MINUS");
+                    initToken(TOKEN_MINUS, NULL);
+                }
+                else if(c == '*'){
+                    debug_print("MULTIPLE");
+                    initToken(TOKEN_MUL, NULL);
+                }
                 else if(c == '<'){
                     c = getc(stdin);
                     if(c == '='){
+                        debug_print("LESS EQUAL");
                         initToken(TOKEN_LESS_EQUAL, NULL);
                     } else {
                         ungetc(c,stdin);
+                        debug_print("LESS");
                         initToken(TOKEN_LESS, NULL);
                     }
                     
                 } else if(c == '>'){
                     c = getc(stdin);
                     if(c == '='){
+                        debug_print("MORE EQUAL");
                         initToken(TOKEN_MORE_EQUAL, NULL);
                     } else {
                         ungetc(c,stdin);
+                        debug_print("MORE");
                         initToken(TOKEN_MORE, NULL);
                     }
                     
                 } else if(c == '='){
                     c = getc(stdin);
                     if(c == '='){
+                        debug_print("EQUAL");
                         initToken(TOKEN_EQUAL, NULL);
                     } else {
                         // inicializacia premennej
                         ungetc(c,stdin);
+                        debug_print("IDENTIF_INIT");
                         initToken(IDENTIF_INIT, NULL);
                     }
                     
                 } else if(c == '!'){
                     c = getc(stdin);
                     if(c == '='){
+                        debug_print("NOT EQUAL");
                         initToken(TOKEN_NOT_EQUAL, NULL);
                     } else {
                         error_exit(LEX_ERROR,"Lexikalna chyba!");
@@ -112,12 +142,30 @@ int lexer(){
                 }
                 
                 // oddelovace
-                else if(c == ',') initToken(TOKEN_COMMA, NULL);
-                else if(c == ';') initToken(TOKEN_SEMICOLON, NULL);
-                else if(c == '(') initToken(TOKEN_ROUND_LBRACKET, NULL);
-                else if(c == ')') initToken(TOKEN_ROUND_RBRACKET, NULL);
-                else if(c == '{') initToken(TOKEN_CURLY_LBRACKET, NULL);
-                else if(c == '}') initToken(TOKEN_CURLY_RBRACKET, NULL);
+                else if(c == ','){
+                    debug_print("COMMA");
+                    initToken(TOKEN_COMMA, NULL);
+                }
+                else if(c == ';'){
+                    debug_print("SEMICOLON");
+                    initToken(TOKEN_SEMICOLON, NULL);
+                }
+                else if(c == '('){
+                    debug_print("LEFT ROUND BRACKET");
+                    initToken(TOKEN_ROUND_LBRACKET, NULL);
+                }
+                else if(c == ')'){
+                    debug_print("RIGHT ROUND BRACKET");
+                    initToken(TOKEN_ROUND_RBRACKET, NULL);
+                }
+                else if(c == '{'){
+                    debug_print("LEFT CURLY BRACKET");
+                    initToken(TOKEN_CURLY_LBRACKET, NULL);
+                }
+                else if(c == '}'){
+                    debug_print("RIGHT CURLY BRACKET");
+                    initToken(TOKEN_CURLY_RBRACKET, NULL);
+                }
 
                 // nezname znaky
                 else { 
@@ -136,10 +184,17 @@ int lexer(){
                     stav = STATE_START;
                 } else if (c == '*'){
                     // Blokovy komentar
-                    char nextChar;
-                    while((c = getc(stdin))){
-                        nextChar = getc(stdin);
-                        if(c == '*' && nextChar == '/'){ break; }
+                    while(1){
+                        c = getc(stdin);
+                        if(c == '*'){
+                            c = getc(stdin);
+                            if(c == '/'){
+                                stav = STATE_START;
+                                break;
+                            } else{
+                                ungetc(c, stdin);
+                            }                           
+                        }
 
                         if(feof(stdin)){ error_exit(LEX_ERROR,"Lexikalna chyba!"); }
                     }
@@ -150,6 +205,7 @@ int lexer(){
                 
                 while(1){                    
                     if(isalpha(c) || isdigit(c) || c == '_'){
+                        //debug_print("%c",c);
                         addChar(buffer, c);
                         c = getc(stdin);
                     } else {
@@ -188,14 +244,18 @@ int lexer(){
                         stav = STATE_START;
                         break;
                     }
-                    debug_print("KEYWORD: %s", buffer->str);
                 } 
                 
                 // identifikator
                 else {
                     initToken(TOKEN_IDENTIF, buffer->str);
                     debug_print("IDENTIFIER: %s", buffer->str);
+                    clearBuffer(buffer);
+                    freeBuffer(buffer);
+                    stav = STATE_START;
+                    break;
                 }
+                debug_print("KEYWORD: %s", buffer->str);
                 clearBuffer(buffer);
                 freeBuffer(buffer);
                 stav = STATE_START;
@@ -204,6 +264,9 @@ int lexer(){
             case STATE_NUMBER:
 
                 if(isdigit(c)){
+                    if(firstDigit == '0'){
+                        error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    }
                     addChar(buffer, c);                    
                     stav = STATE_NUMBER;
                 } else if(c == '.'){
@@ -219,6 +282,7 @@ int lexer(){
                     stav = STATE_EXPONENT_NUMBER;
                 } else {
                     ungetc(c, stdin);
+                    debug_print("NUMBER INT: %s", buffer->str);
                     initToken(TOKEN_INT, buffer->str);
                     clearBuffer(buffer);
                     freeBuffer(buffer);
@@ -236,6 +300,7 @@ int lexer(){
                     stav = STATE_EXPONENT_NUMBER;
                 } else {
                     ungetc(c, stdin);
+                    debug_print("NUMBER FLOAT: %s", buffer->str);
                     initToken(TOKEN_FLOAT, buffer->str);
                     clearBuffer(buffer);
                     freeBuffer(buffer);
@@ -269,6 +334,7 @@ int lexer(){
                     stav = STATE_EXPONENT_NUMBER_FINAL;
                 } else {      
                     ungetc(c, stdin);
+                    debug_print("NUMBER FLOAT: %s", buffer->str);
                     initToken(TOKEN_FLOAT, buffer->str);
                     clearBuffer(buffer);
                     freeBuffer(buffer);
@@ -283,6 +349,7 @@ int lexer(){
                     // koniec stringu
                     if(c == '"'){
                         addChar(buffer, c);
+                        debug_print("STRING: %s", buffer->str);
                         initToken(TOKEN_STRING, buffer->str);
                         clearBuffer(buffer);
                         freeBuffer(buffer);

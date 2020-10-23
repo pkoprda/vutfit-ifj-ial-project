@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra
+CFLAGS = -std=c11 -Wall -Wextra
 
 SOURCE = src/*.c
 BIN = bin/main
@@ -11,7 +11,7 @@ $(BIN): $(SOURCE)
 
 test:
 	$(CC) $(SOURCE) $(CFLAGS) -o $(BIN)
-	@./test.sh
+	@./script.sh
 
 clean:
 	rm bin/main
