@@ -1,6 +1,7 @@
 #include "libmine.h"
 
-int main(){
+int main()
+{
     lexer();
     return 0;
 }

@@ -14,7 +14,7 @@ do
 
     if [ -f "tests/"${name}".go" ]
     then
-        $( bin/main <tests/"${name}".go )
+        ( bin/main <tests/"${name}".go ) >/dev/null
         RC=$?
         if [ "${RC}" = "$(cat tests/"${name}".rc)" ]
         then
@@ -25,7 +25,7 @@ do
             ((COUNT_FALSE+=1))
         fi
     else
-        $( bin/main <tests/scanner/"${name}".go )
+        ( bin/main <tests/scanner/"${name}".go ) >/dev/null
         RC=$?
         if [ "${RC}" = "$(cat tests/scanner/"${name}".rc)" ]
         then
