@@ -6,7 +6,7 @@ void initStack(Stack *s)
     /* Inicializacia zasobniku zlyhala */
     if (s == NULL)
     {
-        // Doplnit
+        // Doplnit spravny exit code
         exit(0);
     }
     /* Alokovanie pamäte zasobniku */
@@ -72,14 +72,14 @@ void stackFlip(Stack *s)
     }
 }
 
-void stackPrint(Stack *s)
+void stackPrint(Stack *s, char *displayToken[])
 {
     printf("\n*************************\n");
     for (int i = 0; i < s->top; i++)
     {
         TokenPtr tmp = (TokenPtr)s->value[i];
         printf("-----------------\n");
-        printf("%d\t%s\n", tmp->type, tmp->value);
+        printf("|\t%s\t|\t%s\n", displayToken[tmp->type], tmp->value);
         printf("-----------------\n");
     }
     printf("*************************\n\n");

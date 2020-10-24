@@ -2,6 +2,14 @@
 
 Stack stack;
 
+char *displayToken[] = {
+    "identifier", ":=", "=",
+    "INT", "FLOAT", "STR",
+    "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=",
+    ",", ";", "(", ")", "{", "}",
+    "package", "if", "else", "for", "func", "int", "float64", "string", "return",
+    "main", "inputs", "inputi", "inputf", "print", "int2float", "float2int", "len", "substr", "ord", "chr"};
+
 int lexer()
 {
     char c; //*buffer; //*bufferStart, *bufferNew;
@@ -188,6 +196,7 @@ int lexer()
                     nextChar = getc(stdin);
                     if (c == '*' && nextChar == '/')
                     {
+                        stav = STATE_START;
                         break;
                     }
 
@@ -236,6 +245,8 @@ int lexer()
                     stackPush(&stack, initToken(KEYWORD_RETURN, NULL));
                 else if (!strcmp(buffer->str, "string"))
                     stackPush(&stack, initToken(KEYWORD_STRING, NULL));
+                else if (!strcmp(buffer->str, "main"))
+                    stackPush(&stack, initToken(FUNC_MAIN, NULL));
                 else if (!strcmp(buffer->str, "inputs"))
                     stackPush(&stack, initToken(FUNC_INPUTS, NULL));
                 else if (!strcmp(buffer->str, "inputi"))
@@ -278,6 +289,7 @@ int lexer()
             }
             clearBuffer(buffer);
             freeBuffer(buffer);
+            buffer = &bufferHelp;
             stav = STATE_START;
             break;
 
@@ -312,6 +324,7 @@ int lexer()
                 stackPush(&stack, initToken(TOKEN_INT, buffer->str));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
+                buffer = &bufferHelp;
                 stav = STATE_START;
             }
 
@@ -334,6 +347,7 @@ int lexer()
                 initToken(TOKEN_FLOAT, buffer->str);
                 clearBuffer(buffer);
                 freeBuffer(buffer);
+                buffer = &bufferHelp;
                 stav = STATE_START;
             }
             break;
@@ -378,6 +392,7 @@ int lexer()
                 stackPush(&stack, initToken(TOKEN_FLOAT, buffer->str));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
+                buffer = &bufferHelp;
                 stav = STATE_START;
             }
             break;
@@ -391,9 +406,11 @@ int lexer()
                 if (c == '"')
                 {
                     addChar(buffer, c);
+                    debug_print("STRING: %s", buffer->str);
                     stackPush(&stack, initToken(TOKEN_STRING, buffer->str));
                     clearBuffer(buffer);
                     freeBuffer(buffer);
+                    buffer = &bufferHelp;
                     stav = STATE_START;
                     break;
                 }
@@ -469,6 +486,6 @@ int lexer()
     }
 
     stackFlip(&stack);
-    stackPrint(&stack);
+    stackPrint(&stack, displayToken);
     return SCANNER_OK;
 }

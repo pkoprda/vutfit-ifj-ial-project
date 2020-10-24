@@ -22,17 +22,6 @@
 
 typedef enum
 {
-
-    // stavy automatu
-    STATE_START,
-    STATE_COMMENTS,
-    STATE_IDENTIF,
-    STATE_STRING,
-    STATE_NUMBER,
-    STATE_FLOAT_NUMBER,
-    STATE_EXPONENT_NUMBER,
-    STATE_EXPONENT_NUMBER_FINAL,
-
     // identifikator, definicia, inicializacia
     TOKEN_IDENTIF,
     IDENTIF_DEF,
@@ -75,6 +64,7 @@ typedef enum
     KEYWORD_RETURN,
 
     // funkcie
+    FUNC_MAIN,
     FUNC_INPUTS,
     FUNC_INPUTI,
     FUNC_INPUTF,
@@ -84,7 +74,18 @@ typedef enum
     FUNC_LEN,
     FUNC_SUBSTR,
     FUNC_ORD,
-    FUNC_CHR
+    FUNC_CHR,
+
+    // stavy automatu
+    STATE_START,
+    STATE_COMMENTS,
+    STATE_IDENTIF,
+    STATE_STRING,
+    STATE_NUMBER,
+    STATE_FLOAT_NUMBER,
+    STATE_EXPONENT_NUMBER,
+    STATE_EXPONENT_NUMBER_FINAL
+
 } Types;
 
 typedef struct tToken
@@ -113,7 +114,7 @@ void stackPop(Stack *s);
 void stackPush(Stack *s, void *p);
 void stackFree(Stack *s);
 void stackFlip(Stack *s);
-void stackPrint(Stack *s);
+void stackPrint(Stack *s, char *displayToken[]);
 
 char *my_strdup(const char *str);
 int lexer();
