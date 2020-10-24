@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra
+CFLAGS = -std=c11 -Wall -Wextra
 
 SOURCE = src/*.c
 BIN = bin/main
