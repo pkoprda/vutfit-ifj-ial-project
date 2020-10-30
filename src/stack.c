@@ -18,6 +18,11 @@ void initStack(Stack *s)
     }
 }
 
+int stackEmpty(Stack *s)
+{
+    return s->top == 0;
+}
+
 /* Vrati vrchol zasobniku */
 void *stackTop(Stack *s)
 {

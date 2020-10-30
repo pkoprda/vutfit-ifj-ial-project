@@ -88,6 +88,19 @@ typedef enum
 
 } Types;
 
+typedef enum
+{
+    STMT
+} Nodes;
+
+typedef struct Tree
+{
+    int type;
+    char *value;
+    struct Tree *Lptr;
+    struct Tree *Rptr;
+} Tree;
+
 typedef struct tToken
 {
     int type;
@@ -115,6 +128,7 @@ void stackPush(Stack *s, void *p);
 void stackFree(Stack *s);
 void stackFlip(Stack *s);
 void stackPrint(Stack *s, char *displayToken[]);
+int stackEmpty(Stack *s);
 
 char *my_strdup(const char *str);
 int lexer();
@@ -124,3 +138,11 @@ void freeBuffer(string *buffer);
 TokenPtr initToken(int type, char *value);
 string *addChar(string *buffer, char c);
 void initString(string *s);
+TokenPtr getToken(Stack *s);
+
+Tree *parse();
+int parser();
+
+Tree *createNode(int type, char *value, Tree *Lptr, Tree *Rptr);
+
+extern Stack stack;

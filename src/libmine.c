@@ -49,6 +49,25 @@ TokenPtr initToken(int type, char *value)
     return token;
 }
 
+TokenPtr getToken(Stack *s)
+{
+    TokenPtr tmp = (TokenPtr)stackTop(s);
+    stackPop(s);
+    return tmp;
+}
+
+Tree *createNode(int type, char *value, Tree *Lptr, Tree *Rptr)
+{
+    Tree *tree = malloc(sizeof(struct Tree));
+    //if (tree == NULL)
+    //error_exit(99, "Failed to allocate memory");
+    tree->type = type;
+    tree->value = value;
+    tree->Lptr = Lptr;
+    tree->Rptr = Rptr;
+    return tree;
+}
+
 void initString(string *s)
 {
     s->str = (char *)malloc(sizeof(char) * SIZE_STRING_INC);

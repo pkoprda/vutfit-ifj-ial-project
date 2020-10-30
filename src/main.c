@@ -3,5 +3,6 @@
 int main()
 {
     lexer();
+    parser();
     return 0;
 }
