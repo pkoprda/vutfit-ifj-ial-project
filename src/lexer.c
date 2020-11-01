@@ -5,8 +5,9 @@ Stack stack;
 char *displayToken[] = {
     "identifier", ":=", "=",
     "INT", "FLOAT", "STR",
-    "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=",
-    ",", ";", "(", ")", "{", "}",
+    "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=", "WS", "EOL",
+    ",",
+    ";", "(", ")", "{", "}",
     "package", "if", "else", "for", "func", "int", "float64", "string", "return",
     "main", "inputs", "inputi", "inputf", "print", "int2float", "float2int", "len", "substr", "ord", "chr"};
 
@@ -31,9 +32,23 @@ int lexer()
         // pociatocny stav automatu
         case STATE_START:
 
-            // prazdne riadky preskakujem
-            if (c == '\n' || c == '\r' || c == '\t' || c == ' ' || c == EOF)
+            // \r iba pre subory s CRLF
+            if (c == '\r' || c == EOF)
                 ;
+
+            // novy riadok
+            else if (c == '\n')
+            {
+                debug_print("EOL");
+                stackPush(&stack, initToken(TOKEN_EOL, NULL));
+            }
+
+            // medzera
+            else if (c == '\t' || c == ' ')
+            {
+                debug_print("WHITESPACE");
+                stackPush(&stack, initToken(TOKEN_WHITESPACE, NULL));
+            }
 
             // delenie alebo komentar
             else if (c == '/')

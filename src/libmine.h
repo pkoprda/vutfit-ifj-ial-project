@@ -45,6 +45,8 @@ typedef enum
     TOKEN_NOT_EQUAL,
 
     // oddelovace
+    TOKEN_WHITESPACE,
+    TOKEN_EOL,
     TOKEN_COMMA,
     TOKEN_SEMICOLON,
     TOKEN_ROUND_LBRACKET,
