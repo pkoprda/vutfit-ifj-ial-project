@@ -45,7 +45,6 @@ typedef enum
     TOKEN_NOT_EQUAL,
 
     // oddelovace
-    TOKEN_WHITESPACE,
     TOKEN_EOL,
     TOKEN_COMMA,
     TOKEN_SEMICOLON,
@@ -92,7 +91,20 @@ typedef enum
 
 typedef enum
 {
-    STMT
+    SEQ,
+    PACKAGE_MAIN,
+    N_PARAMS_RETURNTYPES,
+    N_DEF_FUNC,
+    N_IDENTIFIER,
+    N_PARAM_IDENT_INT,
+    N_PARAM_IDENT_STR,
+    N_PARAM_IDENT_FLOAT,
+    N_LIT_INT,
+    N_LIT_FLOAT,
+    N_LIT_STRING,
+    RETURN_TYPE_INT,
+    RETURN_TYPE_STR,
+    RETURN_TYPE_FLOAT,
 } Nodes;
 
 typedef struct Tree
@@ -141,10 +153,25 @@ TokenPtr initToken(int type, char *value);
 string *addChar(string *buffer, char c);
 void initString(string *s);
 TokenPtr getToken(Stack *s);
+void ungetToken(Stack *s);
 
-Tree *parse();
 int parser();
+Tree *parse();
+Tree *prolog();
+Tree *program();
+Tree *stmt();
+Tree *params();
+Tree *getRT();
+Tree *rt();
+Tree *rt2();
+void expectToken(int type);
+void optionalEOL();
 
-Tree *createNode(int type, char *value, Tree *Lptr, Tree *Rptr);
+Tree *createNode(int type, Tree *Lptr, Tree *Rptr);
+Tree *createLeaf(int type, char *value);
+
+void prt_ast(Tree *t);
+void Print_tree2(Tree *TempTree, char *sufix, char fromdir);
+void Print_tree(Tree *TempTree);
 
 extern Stack stack;

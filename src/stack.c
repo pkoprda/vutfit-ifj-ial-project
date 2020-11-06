@@ -43,6 +43,10 @@ void stackPop(Stack *s)
     {
         s->top--;
     }
+    else
+    {
+        debug_print("STACK IS EMPTY!");
+    }
 }
 
 /* Vlozi prvok na vrchol zasobniku */

@@ -5,7 +5,7 @@ Stack stack;
 char *displayToken[] = {
     "identifier", ":=", "=",
     "INT", "FLOAT", "STR",
-    "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=", "WS", "EOL",
+    "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=", "EOL",
     ",",
     ";", "(", ")", "{", "}",
     "package", "if", "else", "for", "func", "int", "float64", "string", "return",
@@ -46,8 +46,8 @@ int lexer()
             // medzera
             else if (c == '\t' || c == ' ')
             {
-                debug_print("WHITESPACE");
-                stackPush(&stack, initToken(TOKEN_WHITESPACE, NULL));
+                ;
+                //debug_print("WHITESPACE");
             }
 
             // delenie alebo komentar

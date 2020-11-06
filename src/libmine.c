@@ -49,22 +49,52 @@ TokenPtr initToken(int type, char *value)
     return token;
 }
 
+void ungetToken(Stack *s)
+{
+    s->top++;
+}
+
 TokenPtr getToken(Stack *s)
 {
+    if (stackEmpty(s))
+    {
+        debug_print("GET TOKEN RETURNED NULL");
+        return NULL;
+    }
     TokenPtr tmp = (TokenPtr)stackTop(s);
     stackPop(s);
     return tmp;
 }
 
-Tree *createNode(int type, char *value, Tree *Lptr, Tree *Rptr)
+void expectToken(int type)
+{
+    if (!(getToken(&stack)->type == type))
+    {
+        error_exit(SYNTAX_ERROR, "Syntax error");
+    }
+}
+
+Tree *createNode(int type, Tree *Lptr, Tree *Rptr)
+{
+    Tree *tree = malloc(sizeof(struct Tree));
+    //if (tree == NULL)
+    //error_exit(99, "Failed to allocate memory");
+    tree->type = type;
+    tree->value = NULL;
+    tree->Lptr = Lptr;
+    tree->Rptr = Rptr;
+    return tree;
+}
+
+Tree *createLeaf(int type, char *value)
 {
     Tree *tree = malloc(sizeof(struct Tree));
     //if (tree == NULL)
     //error_exit(99, "Failed to allocate memory");
     tree->type = type;
     tree->value = value;
-    tree->Lptr = Lptr;
-    tree->Rptr = Rptr;
+    tree->Lptr = NULL;
+    tree->Rptr = NULL;
     return tree;
 }
 
