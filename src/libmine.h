@@ -39,8 +39,8 @@ typedef enum
     TOKEN_DIV,
     TOKEN_LESS,
     TOKEN_LESS_EQUAL,
-    TOKEN_MORE,
-    TOKEN_MORE_EQUAL,
+    TOKEN_GREATER,
+    TOKEN_GREATER_EQUAL,
     TOKEN_EQUAL,
     TOKEN_NOT_EQUAL,
 
@@ -105,7 +105,43 @@ typedef enum
     RETURN_TYPE_INT,
     RETURN_TYPE_STR,
     RETURN_TYPE_FLOAT,
+    N_PRINT,
+    N_INPUTI,
+    N_INPUTS,
+    N_INPUTF,
+    N_IDENT_DEF,
+    N_IDENT_INIT,
+    N_FUNC,
+    N_PLUS,
+    N_MINUS,
+    N_MULL,
+    N_DIV,
+    N_GREATER,
+    N_LESS,
+    N_EQ_GREATER,
+    N_EQ_LESS,
+    N_EQUAL,
+    N_NOT_EQUAL,
+    N_IF,
+    N_ELSE,
+    N_RETURN,
+    N_LEN,
+    N_SUBSTR,
+    N_ORD,
+    N_CHR,
+    N_FOR,
+    N_INT2FLOAT,
+    N_FLOAT2INT,
+
 } Nodes;
+
+typedef struct
+{
+    int token;
+    int precedence;
+    int node;
+} attrTable;
+extern attrTable table[];
 
 typedef struct Tree
 {
@@ -160,12 +196,17 @@ Tree *parse();
 Tree *prolog();
 Tree *program();
 Tree *stmt();
+Tree *stmt2();
 Tree *params();
 Tree *getRT();
 Tree *rt();
 Tree *rt2();
+Tree *terms();
+Tree *terms2();
+Tree *expr(int precedence);
 void expectToken(int type);
 void optionalEOL();
+void checkForExcessEOL();
 
 Tree *createNode(int type, Tree *Lptr, Tree *Rptr);
 Tree *createLeaf(int type, char *value);

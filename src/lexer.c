@@ -134,12 +134,12 @@ int lexer()
                 c = getc(stdin);
                 if (c == '=')
                 {
-                    stackPush(&stack, initToken(TOKEN_MORE_EQUAL, NULL));
+                    stackPush(&stack, initToken(TOKEN_GREATER_EQUAL, NULL));
                 }
                 else
                 {
                     ungetc(c, stdin);
-                    stackPush(&stack, initToken(TOKEN_MORE, NULL));
+                    stackPush(&stack, initToken(TOKEN_GREATER, NULL));
                 }
             }
             else if (c == '=')
@@ -261,7 +261,7 @@ int lexer()
                 else if (!strcmp(buffer->str, "string"))
                     stackPush(&stack, initToken(KEYWORD_STRING, NULL));
                 else if (!strcmp(buffer->str, "main"))
-                    stackPush(&stack, initToken(FUNC_MAIN, NULL));
+                    stackPush(&stack, initToken(FUNC_MAIN, "main"));
                 else if (!strcmp(buffer->str, "inputs"))
                     stackPush(&stack, initToken(FUNC_INPUTS, NULL));
                 else if (!strcmp(buffer->str, "inputi"))
@@ -299,7 +299,7 @@ int lexer()
             // identifikator
             else
             {
-                stackPush(&stack, initToken(TOKEN_IDENTIF, buffer->str));
+                stackPush(&stack, initToken(TOKEN_IDENTIF, my_strdup(buffer->str)));
                 debug_print("IDENTIFIER: %s", buffer->str);
             }
             clearBuffer(buffer);
@@ -336,7 +336,7 @@ int lexer()
             else
             {
                 ungetc(c, stdin);
-                stackPush(&stack, initToken(TOKEN_INT, buffer->str));
+                stackPush(&stack, initToken(TOKEN_INT, my_strdup(buffer->str)));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
                 buffer = &bufferHelp;
@@ -359,7 +359,7 @@ int lexer()
             else
             {
                 ungetc(c, stdin);
-                initToken(TOKEN_FLOAT, buffer->str);
+                stackPush(&stack, initToken(TOKEN_FLOAT, my_strdup(buffer->str)));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
                 buffer = &bufferHelp;
@@ -422,7 +422,7 @@ int lexer()
                 {
                     addChar(buffer, c);
                     debug_print("STRING: %s", buffer->str);
-                    stackPush(&stack, initToken(TOKEN_STRING, buffer->str));
+                    stackPush(&stack, initToken(TOKEN_STRING, my_strdup(buffer->str)));
                     clearBuffer(buffer);
                     freeBuffer(buffer);
                     buffer = &bufferHelp;
