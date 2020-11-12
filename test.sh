@@ -12,7 +12,7 @@ do
     ((COUNT_ALL+=1))
     name=${n::-3}
 
-    $( bin/main <tests/"${name}".go )
+    bin/main <tests/"${name}".go
     RC=$?
     
     if [ "${RC}" = "$(cat tests/"${name}".rc)" ]

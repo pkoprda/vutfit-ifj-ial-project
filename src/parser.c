@@ -293,7 +293,7 @@ Tree *stmt()
     // printf("I get here\n");
     if (stackEmpty(&stack))
     {
-        printf("I get here too\n");
+        // printf("I get here too\n");
         return root;
     }
     tok = getToken(&stack);
@@ -446,7 +446,7 @@ Tree *stmt3()
     }
     else
     {
-        error_exit(2, "SYNTAX ERROR");
+        error_exit(SYNTAX_ERROR, "SYNTAX ERROR");
     }
     return root;
 }
@@ -616,7 +616,7 @@ Tree *expr(int precedence)
         }
         else
         {
-            error_exit(2, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
         expectToken(TOKEN_ROUND_RBRACKET);
         break;
@@ -630,7 +630,7 @@ Tree *expr(int precedence)
         }
         else
         {
-            error_exit(2, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
         expectToken(TOKEN_ROUND_RBRACKET);
         break;
@@ -644,7 +644,7 @@ Tree *expr(int precedence)
         }
         else
         {
-            error_exit(2, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
         expectToken(TOKEN_COMMA);
         t = getToken(&stack);
@@ -654,7 +654,7 @@ Tree *expr(int precedence)
         }
         else
         {
-            error_exit(2, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
         expectToken(TOKEN_ROUND_RBRACKET);
         break;
@@ -668,7 +668,7 @@ Tree *expr(int precedence)
         }
         else
         {
-            error_exit(2, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
         expectToken(TOKEN_COMMA);
         t = getToken(&stack);
@@ -678,7 +678,7 @@ Tree *expr(int precedence)
         }
         else
         {
-            error_exit(2, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
         expectToken(TOKEN_COMMA);
         t = getToken(&stack);
@@ -688,7 +688,7 @@ Tree *expr(int precedence)
         }
         else
         {
-            error_exit(2, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
         expectToken(TOKEN_ROUND_RBRACKET);
         break;

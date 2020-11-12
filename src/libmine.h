@@ -6,9 +6,9 @@
 #include "error.h"
 
 #ifdef DEBUG
-#define debug_print(M, ...) fprintf(stderr, "[DEBUG] (%s:%d): " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+    #define debug_print(M, ...) fprintf(stderr, "[DEBUG] (%s:%d): " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #else
-#define debug_print(M, ...)
+    #define debug_print(M, ...)
 #endif
 
 #define SIZE_STRING_INC 8

@@ -6,15 +6,14 @@ char *displayToken[] = {
     "identifier", ":=", "=",
     "INT", "FLOAT", "STR",
     "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=", "EOL",
-    ",",
-    ";", "(", ")", "{", "}",
+    ",", ";", "(", ")", "{", "}",
     "package", "if", "else", "for", "func", "int", "float64", "string", "return",
     "main", "inputs", "inputi", "inputf", "print", "int2float", "float2int", "len", "substr", "ord", "chr"};
 
 int lexer()
 {
-    char c; //*buffer; //*bufferStart, *bufferNew;
-    //size_t lenLineMax, len;
+    char c;
+
     /* Neskor extern aby bol global */
     initStack(&stack);
     int stav = STATE_START;
@@ -198,8 +197,15 @@ int lexer()
             if (c == '/')
             {
                 // Jednoriadkovy komentar
-                while ((c = getc(stdin)) != '\n')
-                    ;
+                c = getc(stdin);
+                while (c != '\n')
+                {
+                    if(c == EOF){
+                        break;
+                    }
+                    c = getc(stdin);
+                }
+                stackPush(&stack, initToken(TOKEN_EOL, NULL));
                 stav = STATE_START;
             }
             else if (c == '*')
@@ -213,6 +219,12 @@ int lexer()
                     {
                         stav = STATE_START;
                         break;
+                    }
+                    ungetc(nextChar, stdin);
+
+                    if (c == '\n')
+                    {
+                        stackPush(&stack, initToken(TOKEN_EOL, NULL));
                     }
 
                     if (feof(stdin))
