@@ -418,8 +418,15 @@ Tree *stmt2(char *name)
         break;
     case TOKEN_COMMA:
         help = stmt3();
-        expectToken(IDENTIF_INIT);
-        root = createNode(N_IDENT_INIT, createNode(SEQ, help, createLeaf(N_IDENTIFIER, name)), stmt4_5());
+        tok = getToken(&stack);
+        if (tok->type == IDENTIF_INIT || tok->type == IDENTIF_DEF)
+        {
+            root = createNode(N_IDENT_INIT, createNode(SEQ, help, createLeaf(N_IDENTIFIER, name)), stmt4_5());
+        }
+        else
+        {
+            error_exit(2, "Syntax error.");
+        }
         break;
     }
     return root;
