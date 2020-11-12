@@ -179,7 +179,10 @@ Tree *rt()
     if (tok->type == TOKEN_ROUND_LBRACKET)
     {
         returntype = getRT();
-        returntypeNode = createNode(SEQ, rt2(), returntype);
+        if (returntype != NULL)
+        {
+            returntypeNode = createNode(SEQ, rt2(), returntype);
+        }
         expectToken(TOKEN_ROUND_RBRACKET);
         return returntypeNode;
     }
@@ -221,7 +224,9 @@ Tree *getRT()
     case KEYWORD_STRING:
         return createLeaf(RETURN_TYPE_STR, NULL);
         break;
-
+    case TOKEN_ROUND_RBRACKET:
+        ungetToken(&stack);
+        return NULL;
     default:
         error_exit(SYNTAX_ERROR, "Syntax error");
     }
