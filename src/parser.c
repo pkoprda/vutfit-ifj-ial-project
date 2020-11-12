@@ -382,7 +382,7 @@ Tree *stmt()
         expectToken(TOKEN_EOL);
         els_cont = stmt();
         expectToken(TOKEN_CURLY_RBRACKET);
-        expectToken(TOKEN_EOL);
+        optionalEOL();
         help = createNode(N_IF, condition, createNode(N_ELSE, els_cont, if_cont));
         root = createNode(SEQ, stmt(), help);
         break;
