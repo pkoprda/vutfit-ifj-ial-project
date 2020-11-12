@@ -313,7 +313,16 @@ Tree *stmt()
         break;
 
     case KEYWORD_RETURN:
-        root = createNode(SEQ, NULL, createNode(N_RETURN, NULL /*, expr()*/, expr(0)));
+        tok = getToken(&stack);
+        if (tok->type != TOKEN_EOL)
+        {
+            ungetToken(&stack);
+            root = createNode(SEQ, NULL, createNode(N_RETURN, stmt4_5(), NULL));
+        }
+        else
+        {
+            ungetToken(&stack);
+        }
         expectToken(TOKEN_EOL);
         break;
 
