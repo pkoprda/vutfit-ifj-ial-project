@@ -1,9 +1,11 @@
+// Vnorene for cykly, lex aj syntax OK
+
 package main
 
 func main(){
-	if a < 0 {
-		print("Faktorial nejde spocitat!\n")
-	  } else {
-		vysl := 1
-	  }
+  for ; a == b; {
+    for ; a == b ; {
+      for ; a == b ; {
+        for ; a == b ; {
+          }}}}
 }

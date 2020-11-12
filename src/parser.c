@@ -59,6 +59,10 @@ Tree *ast;
 
 int parser()
 {
+    if (stackEmpty(&stack))
+    {
+        return 0;
+    }
     ast = parse();
     Print_tree(ast);
     return 0;
@@ -67,7 +71,11 @@ int parser()
 Tree *parse()
 {
     Tree *root = NULL;
-
+    checkForExcessEOL();
+    if (stackEmpty(&stack))
+    {
+        return root;
+    }
     do
     {
         root = createNode(SEQ, root, prolog());
@@ -84,7 +92,7 @@ void checkForExcessEOL()
             //debug_print("\n%s\n", (TokenPtr)stack->value[stack->top]);
             if (stackEmpty(&stack))
             {
-                error_exit(SYNTAX_ERROR, "Syntax error");
+                return;
             }
         }
         ungetToken(&stack);
@@ -277,7 +285,7 @@ Tree *stmt()
     Tree *id_init = NULL;
     Tree *leaf = NULL;
 
-    printf("I get here\n");
+    // printf("I get here\n");
     if (stackEmpty(&stack))
     {
         printf("I get here too\n");
@@ -294,7 +302,7 @@ Tree *stmt()
         root = createNode(SEQ, stmt(), help);
         break;
     case TOKEN_IDENTIF:
-        help = stmt2();
+        help = stmt2(tok->value);
         expectToken(TOKEN_EOL);
         root = createNode(SEQ, stmt(), help);
         break;
@@ -344,7 +352,8 @@ Tree *stmt()
         expectToken(TOKEN_EOL);
         help = createNode(N_FOR, createNode(SEQ, for_expr, id_def), stmt());
         expectToken(TOKEN_CURLY_RBRACKET);
-        expectToken(TOKEN_EOL);
+        optionalEOL();
+        //expectToken(TOKEN_EOL);
         root = createNode(SEQ, stmt(), help);
         break;
     case KEYWORD_IF:
@@ -365,39 +374,17 @@ Tree *stmt()
         break;
     case TOKEN_EOL:
         return stmt();
-        /* FIX */
-    /*case FUNC_INPUTS:
-        expectToken(TOKEN_ROUND_LBRACKET);
-        help = createLeaf(N_INPUTS, NULL);
-        expectToken(TOKEN_ROUND_RBRACKET);
-        expectToken(TOKEN_EOL);
-        root = createNode(SEQ, stmt(), help);
-        break;
-    case FUNC_INPUTI:
-        expectToken(TOKEN_ROUND_LBRACKET);
-        help = createLeaf(N_INPUTI, NULL);
-        expectToken(TOKEN_ROUND_RBRACKET);
-        expectToken(TOKEN_EOL);
-        root = createNode(SEQ, stmt(), help);
-        break;
-    case FUNC_INPUTF:
-        expectToken(TOKEN_ROUND_LBRACKET);
-        help = createLeaf(N_INPUTF, NULL);
-        expectToken(TOKEN_ROUND_RBRACKET);
-        expectToken(TOKEN_EOL);
-        root = createNode(SEQ, stmt(), help);
-        break;*/
-    /* FIX */
     default:
         ungetToken(&stack);
     }
     return root;
 }
 
-Tree *stmt2()
+Tree *stmt2(char *name)
 {
     Tree *root = NULL;
     TokenPtr identificator = tok;
+    Tree *help = NULL;
     tok = getToken(&stack);
     switch (tok->type)
     {
@@ -409,8 +396,92 @@ Tree *stmt2()
     case IDENTIF_INIT:
         root = createNode(N_IDENT_INIT, createLeaf(N_IDENTIFIER, identificator->value), expr(0));
         break;
+    case TOKEN_ROUND_LBRACKET:
+        help = arg_coma();
+        expectToken(TOKEN_ROUND_RBRACKET);
+        root = createNode(N_FUNC, help, NULL);
+        root->value = my_strdup(name);
+        break;
+    case TOKEN_COMMA:
+        help = stmt3();
+        expectToken(IDENTIF_INIT);
+        root = createNode(N_IDENT_INIT, createNode(SEQ, help, createLeaf(N_IDENTIFIER, name)), stmt4_5());
+        break;
     }
     return root;
+}
+
+Tree *stmt3()
+{
+    Tree *root = NULL;
+    char *val = NULL;
+    tok = getToken(&stack);
+    if (tok->type == TOKEN_IDENTIF)
+    {
+        val = tok->value;
+        tok = getToken(&stack);
+        if (tok->type == TOKEN_COMMA)
+        {
+            root = createNode(SEQ, stmt3(), createLeaf(N_IDENTIFIER, val));
+        }
+        else
+        {
+            ungetToken(&stack);
+            root = createNode(SEQ, root, createLeaf(N_IDENTIFIER, val));
+        }
+    }
+    else
+    {
+        error_exit(2, "SYNTAX ERROR");
+    }
+    return root;
+}
+
+Tree *stmt4_5()
+{
+    Tree *root = NULL;
+    root = createNode(SEQ, root, expr(0));
+    tok = getToken(&stack);
+    if (tok->type == TOKEN_COMMA)
+    {
+        root->Lptr = stmt4_5();
+    }
+    else
+    {
+        ungetToken(&stack);
+    }
+    return root;
+}
+
+Tree *arg_coma()
+{
+    Tree *help = NULL;
+    tok = getToken(&stack);
+    while (tok->type == TOKEN_IDENTIF || tok->type == TOKEN_INT || tok->type == TOKEN_FLOAT || tok->type == TOKEN_STRING)
+    {
+        switch (tok->type)
+        {
+        case TOKEN_IDENTIF:
+            help = createNode(SEQ, help, createLeaf(N_IDENTIFIER, tok->value));
+            break;
+        case TOKEN_INT:
+            help = createNode(SEQ, help, createLeaf(N_LIT_INT, tok->value));
+            break;
+        case TOKEN_STRING:
+            help = createNode(SEQ, help, createLeaf(N_LIT_STRING, tok->value));
+            break;
+        case TOKEN_FLOAT:
+            help = createNode(SEQ, help, createLeaf(N_LIT_FLOAT, tok->value));
+            break;
+        default:
+            break;
+        }
+        tok = getToken(&stack);
+        if (tok->type == TOKEN_COMMA)
+            tok = getToken(&stack);
+    }
+    ungetToken(&stack);
+    return help;
 }
 
 Tree *terms()
@@ -450,6 +521,7 @@ Tree *terms2()
 
 Tree *expr(int precedence)
 {
+    TokenPtr t = NULL;
     Tree *root = NULL;
     Tree *help = NULL;
     char *name = NULL;
@@ -462,31 +534,7 @@ Tree *expr(int precedence)
         tok = getToken(&stack);
         if (tok->type == TOKEN_ROUND_LBRACKET)
         {
-            tok = getToken(&stack);
-            while (tok->type == TOKEN_IDENTIF || tok->type == TOKEN_INT || tok->type == TOKEN_FLOAT || tok->type == TOKEN_STRING)
-            {
-                switch (tok->type)
-                {
-                case TOKEN_IDENTIF:
-                    help = createNode(SEQ, help, createLeaf(N_IDENTIFIER, tok->value));
-                    break;
-                case TOKEN_INT:
-                    help = createNode(SEQ, help, createLeaf(N_LIT_INT, tok->value));
-                    break;
-                case TOKEN_STRING:
-                    help = createNode(SEQ, help, createLeaf(N_LIT_STRING, tok->value));
-                    break;
-                case TOKEN_FLOAT:
-                    help = createNode(SEQ, help, createLeaf(N_LIT_FLOAT, tok->value));
-                    break;
-                default:
-                    break;
-                }
-                tok = getToken(&stack);
-                if (tok->type == TOKEN_COMMA)
-                    tok = getToken(&stack);
-            }
-            ungetToken(&stack);
+            help = arg_coma();
             expectToken(TOKEN_ROUND_RBRACKET);
             root = createNode(N_FUNC, help, NULL);
             root->value = my_strdup(name);
@@ -496,6 +544,12 @@ Tree *expr(int precedence)
             root = createLeaf(N_IDENTIFIER, name);
             ungetToken(&stack);
         }
+        break;
+    case TOKEN_ROUND_LBRACKET:
+        root = expr(0);
+        expectToken(TOKEN_ROUND_RBRACKET);
+        tok = getToken(&stack);
+        ungetT = true;
         break;
     case TOKEN_MINUS:
         //tok = getToken(&stack);
@@ -528,6 +582,101 @@ Tree *expr(int precedence)
         root = createLeaf(table[tok->type].node, tok->value);
         tok = getToken(&stack);
         ungetT = true;
+        break;
+    case FUNC_INPUTS:
+    case FUNC_INPUTI:
+    case FUNC_INPUTF:
+        root = createLeaf(table[tok->type].node, NULL);
+        expectToken(TOKEN_ROUND_LBRACKET);
+        expectToken(TOKEN_ROUND_RBRACKET);
+        /*tok = getToken(&stack);
+        ungetT = true;*/
+        break;
+    case FUNC_LEN:
+        root = createLeaf(table[tok->type].node, NULL);
+        expectToken(TOKEN_ROUND_LBRACKET);
+        t = getToken(&stack);
+        if (t->type == TOKEN_STRING || t->type == TOKEN_IDENTIF)
+        {
+            root->value = t->value;
+        }
+        else
+        {
+            error_exit(2, "SYNTAX ERROR!")
+        }
+        expectToken(TOKEN_ROUND_RBRACKET);
+        break;
+    case FUNC_CHR:
+        root = createLeaf(table[tok->type].node, NULL);
+        expectToken(TOKEN_ROUND_LBRACKET);
+        t = getToken(&stack);
+        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        {
+            root->value = t->value;
+        }
+        else
+        {
+            error_exit(2, "SYNTAX ERROR!")
+        }
+        expectToken(TOKEN_ROUND_RBRACKET);
+        break;
+    case FUNC_ORD:
+        root = createNode(table[tok->type].node, NULL, NULL);
+        expectToken(TOKEN_ROUND_LBRACKET);
+        t = getToken(&stack);
+        if (t->type == TOKEN_STRING || t->type == TOKEN_IDENTIF)
+        {
+            root->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
+        }
+        else
+        {
+            error_exit(2, "SYNTAX ERROR!")
+        }
+        expectToken(TOKEN_COMMA);
+        t = getToken(&stack);
+        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        {
+            root->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
+        }
+        else
+        {
+            error_exit(2, "SYNTAX ERROR!")
+        }
+        expectToken(TOKEN_ROUND_RBRACKET);
+        break;
+    case FUNC_SUBSTR:
+        root = createNode(table[tok->type].node, NULL, NULL);
+        expectToken(TOKEN_ROUND_LBRACKET);
+        t = getToken(&stack);
+        if (t->type == TOKEN_STRING || t->type == TOKEN_IDENTIF)
+        {
+            root->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
+        }
+        else
+        {
+            error_exit(2, "SYNTAX ERROR!")
+        }
+        expectToken(TOKEN_COMMA);
+        t = getToken(&stack);
+        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        {
+            root->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
+        }
+        else
+        {
+            error_exit(2, "SYNTAX ERROR!")
+        }
+        expectToken(TOKEN_COMMA);
+        t = getToken(&stack);
+        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        {
+            root->Lptr->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
+        }
+        else
+        {
+            error_exit(2, "SYNTAX ERROR!")
+        }
+        expectToken(TOKEN_ROUND_RBRACKET);
         break;
     default:
         ungetToken(&stack);
