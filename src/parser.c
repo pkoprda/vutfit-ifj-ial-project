@@ -59,10 +59,6 @@ Tree *ast;
 
 int parser()
 {
-    if (stackEmpty(&stack))
-    {
-        return 0;
-    }
     ast = parse();
     Print_tree(ast);
     return 0;
@@ -72,10 +68,6 @@ Tree *parse()
 {
     Tree *root = NULL;
     checkForExcessEOL();
-    if (stackEmpty(&stack))
-    {
-        return root;
-    }
     do
     {
         root = createNode(SEQ, root, prolog());
@@ -104,6 +96,10 @@ Tree *prolog()
     Tree *root = NULL;
     checkForExcessEOL();
     tok = getToken(&stack);
+    if (tok == NULL)
+    {
+        error_exit(6, "Package missing");
+    }
     switch (tok->type)
     {
     case KEYWORD_PACKAGE:
@@ -525,7 +521,8 @@ Tree *terms()
         break;
 
     default:
-        error_exit(SYNTAX_ERROR, "Syntax error");
+        ungetToken(&stack);
+        return NULL;
     }
 }
 
