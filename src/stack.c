@@ -83,13 +83,15 @@ void stackFlip(Stack *s)
 
 void stackPrint(Stack *s, char *displayToken[])
 {
-    fprintf(stderr,"\n*************************\n");
+    stdout_print("\n*************************\n");
     for (int i = 0; i < s->top; i++)
     {
         TokenPtr tmp = (TokenPtr)s->value[i];
-        fprintf(stderr,"-----------------\n");
-        fprintf(stderr,"|\t%s\t|\t%s\n", displayToken[tmp->type], tmp->value);
-        fprintf(stderr,"-----------------\n");
+        stdout_print("-----------------\n");
+        stdout_print("|\t%s\t|\t%s\n", displayToken[tmp->type], tmp->value);
+        stdout_print("-----------------\n");
+        UNUSED(tmp);
+        UNUSED(displayToken);
     }
-    fprintf(stderr,"*************************\n\n");
+    stdout_print("*************************\n\n");
 }

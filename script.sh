@@ -7,21 +7,34 @@ COUNT_ALL=0
 COUNT_OK=0
 COUNT_FALSE=0
 
-for n in $(ls -p tests/ | grep -E -i '^.+\.go$')
+for n in $(ls -p -R tests/ | grep -E -i '^.+\.go$')
 do
     ((COUNT_ALL+=1))
     name=${n::-3}
 
-    bin/main <tests/"${name}".go
-    RC=$?
-    
-    if [ "${RC}" = "$(cat tests/"${name}".rc)" ]
+    if [ -f "tests/"${name}".go" ]
     then
-        echo -e "[${GREEN} OK ${NORMAL}]\t\t${name}"
-        ((COUNT_OK+=1))
+        ( bin/main <tests/"${name}".go ) >/dev/null
+        RC=$?
+        if [ "${RC}" = "$(cat tests/"${name}".rc)" ]
+        then
+            echo -e "[${GREEN} OK ${NORMAL}]\t\t${name}"
+            ((COUNT_OK+=1))
+        else
+            echo -e "[${RED} FAILED ${NORMAL}]\t${name}\t\tRC=${RC} expected=$(cat tests/"${name}".rc)"
+            ((COUNT_FALSE+=1))
+        fi
     else
-        echo -e "[${RED} FAILED ${NORMAL}]\t${name}\t\tRC=${RC} expected=$(cat tests/"${name}".rc)"
-        ((COUNT_FALSE+=1))
+        ( bin/main <tests/scanner/"${name}".go ) >/dev/null
+        RC=$?
+        if [ "${RC}" = "$(cat tests/scanner/"${name}".rc)" ]
+        then
+            echo -e "[${GREEN} OK ${NORMAL}]\t\t${name}"
+            ((COUNT_OK+=1))
+        else
+            echo -e "[${RED} FAILED ${NORMAL}]\t${name}\t\tRC=${RC} expected=$(cat tests/scanner/"${name}".rc)"
+            ((COUNT_FALSE+=1))
+        fi
     fi
 done
 

@@ -12,7 +12,7 @@ char *displayToken[] = {
 
 int lexer()
 {
-    char c;
+    char c, firstDigit;
 
     /* Neskor extern aby bol global */
     initStack(&stack);
@@ -77,10 +77,10 @@ int lexer()
             // cislo - int alebo float64
             else if (isdigit(c))
             {
-                ungetc(c, stdin);
-
+                firstDigit = c;
                 initString(buffer);
                 buffer = initBuffer();
+                addChar(buffer, c);
                 stav = STATE_NUMBER;
             }
 
@@ -324,6 +324,10 @@ int lexer()
 
             if (isdigit(c))
             {
+                if(firstDigit == '0')
+                {
+                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                }
                 addChar(buffer, c);
                 stav = STATE_NUMBER;
             }

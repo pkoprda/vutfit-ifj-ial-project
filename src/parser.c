@@ -771,16 +771,24 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
         if (fromdir == 'L')
         {
             suf2 = strcat(suf2, "  |");
-            fprintf(stderr, "%s\n", suf2);
+            stdout_print("%s\n", suf2);
         }
         else
+        {
             suf2 = strcat(suf2, "   ");
+        }
+            
 
         Print_tree2(TempTree->Rptr, suf2, 'R');
         if (TempTree->value)
-            fprintf(stderr, "%s  +-[ (%d) %s \"%s\" ]\n", sufix, TempTree->type, displayNode[TempTree->type], TempTree->value);
+        {
+            stdout_print("%s  +-[ (%d) %s \"%s\" ]\n", sufix, TempTree->type, displayNode[TempTree->type], TempTree->value);
+        }
         else
-            fprintf(stderr, "%s  +-[ (%d) %s ]\n", sufix, TempTree->type, displayNode[TempTree->type]);
+        {
+            stdout_print("%s  +-[ (%d) %s ]\n", sufix, TempTree->type, displayNode[TempTree->type]);
+        }
+            
 
         strcpy(suf2, sufix);
 
@@ -792,7 +800,10 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
         Print_tree2(TempTree->Lptr, suf2, 'L');
 
         if (fromdir == 'R')
-            fprintf(stderr, "%s\n", suf2);
+        {
+            stdout_print("%s\n", suf2);
+        }
+            
 
         free(suf2);
     }
@@ -800,15 +811,20 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
 
 void Print_tree(Tree *TempTree)
 {
-    fprintf(stderr, "===========================================\n");
-    fprintf(stderr, "Struktura binarniho stromu:\n");
-    fprintf(stderr, "\n");
+    stdout_print("===========================================\n");
+    stdout_print("Struktura binarniho stromu:\n");
+    stdout_print("\n");
 
     if (TempTree != NULL)
+    {
         Print_tree2(TempTree, "", 'X');
+    }
     else
-        fprintf(stderr, "Strom je prazdny...\n");
+    {
+        stdout_print("Strom je prazdny...\n");
+    }
+        
 
-    fprintf(stderr, "\n");
-    fprintf(stderr, "===========================================\n");
+    stdout_print("\n");
+    stdout_print("===========================================\n");
 }

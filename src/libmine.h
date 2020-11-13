@@ -6,11 +6,14 @@
 #include "error.h"
 
 #ifdef DEBUG
-#define debug_print(M, ...) fprintf(stderr, "[DEBUG] (%s:%d): " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+    #define debug_print(M, ...)  fprintf(stderr, "[DEBUG] (%s:%d): " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+    #define stdout_print(M, ...) fprintf(stdout, "" M "\n", ##__VA_ARGS__)
 #else
-#define debug_print(M, ...)
+    #define debug_print(M, ...)
+    #define stdout_print(M, ...)
 #endif
 
+#define UNUSED(x) (void)(x)
 #define SIZE_STRING_INC 8
 #define LINE_BUFF_LEN 128
 #define MIN_LEN_KEYWORD 2
