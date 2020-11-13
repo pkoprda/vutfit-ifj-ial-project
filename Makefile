@@ -11,7 +11,7 @@ $(BIN): $(SOURCE)
 
 test:
 	$(CC) $(SOURCE) $(CFLAGS) -o $(BIN)
-	@./test.sh
+	@./script.sh 2>/dev/null
 
 clean:
 	rm bin/main
