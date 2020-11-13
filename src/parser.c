@@ -108,7 +108,7 @@ Tree *prolog()
         root = createNode(SEQ, program(), createLeaf(PACKAGE_MAIN, NULL));
         break;
     default:
-        error_exit(SYNTAX_ERROR, "Syntax error");
+        error_exit(6, "Package missing");
         break;
     }
     return root;
