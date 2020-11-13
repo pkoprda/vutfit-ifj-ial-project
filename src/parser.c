@@ -103,7 +103,7 @@ Tree *prolog()
     tok = getToken(&stack);
     if (tok == NULL)
     {
-        error_exit(6, "Package missing");
+        error_exit(SYNTAX_ERROR, "Syntax error. Package missing");
     }
     switch (tok->type)
     {
@@ -113,7 +113,7 @@ Tree *prolog()
         root = createNode(SEQ, program(), createLeaf(PACKAGE_MAIN, NULL));
         break;
     default:
-        error_exit(6, "Package missing");
+        error_exit(SYNTAX_ERROR, "Syntax error. Package missing");
         break;
     }
     return root;
@@ -123,6 +123,7 @@ Tree *program()
 {
     checkForExcessEOL();
     Tree *root = NULL;
+    TokenPtr help = NULL;
     Tree *func = NULL;
     Tree *parameters = NULL;
     Tree *returntypes = NULL;
@@ -135,6 +136,8 @@ Tree *program()
     if (tok->type == KEYWORD_FUNC)
     {
         tok = getToken(&stack);
+        help = tok;
+
         if (tok->type == TOKEN_IDENTIF || tok->type == FUNC_MAIN)
         {
             if (tok->type == FUNC_MAIN)
@@ -147,10 +150,22 @@ Tree *program()
         {
             error_exit(SYNTAX_ERROR, "Syntax error");
         }
+
         expectToken(TOKEN_ROUND_LBRACKET);
         parameters = params();
+
+        if (help->type == FUNC_MAIN && parameters != NULL)
+        {
+            error_exit(6, "Function main has to have no parameters");
+        }
+
         expectToken(TOKEN_ROUND_RBRACKET);
         returntypes = rt();
+        if (help->type == FUNC_MAIN && returntypes != NULL)
+        {
+            error_exit(6, "Function main has to have no return types");
+        }
+
         expectToken(TOKEN_CURLY_LBRACKET);
         expectToken(TOKEN_EOL);
         if (parameters != NULL || returntypes != NULL)
