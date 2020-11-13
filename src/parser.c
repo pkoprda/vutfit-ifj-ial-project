@@ -56,11 +56,16 @@ attrTable table[] = {
 
 TokenPtr tok;
 Tree *ast;
+bool func_main_defined = false;
 
 int parser()
 {
     ast = parse();
     Print_tree(ast);
+    if (func_main_defined != true)
+    {
+        error_exit(3, "Funcion main not defined");
+    }
     return 0;
 }
 
@@ -132,6 +137,10 @@ Tree *program()
         tok = getToken(&stack);
         if (tok->type == TOKEN_IDENTIF || tok->type == FUNC_MAIN)
         {
+            if (tok->type == FUNC_MAIN)
+            {
+                func_main_defined = true;
+            }
             func_name = my_strdup(tok->value);
         }
         else
