@@ -185,7 +185,7 @@ typedef struct SymTableItem
     struct SymtableItem *next;
 } SymTablePtr;
 
-typedef struct SymTable
+typedef struct
 {
     SymTablePtr *first;
     SymTablePtr *act;

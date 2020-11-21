@@ -126,26 +126,3 @@ string *addChar(string *s, char c)
     s->str[s->length] = '\0';
     return s;
 }
-
-void createNewFun(FunTable *fun, char *name, char *types, char *retvar)
-{
-    FunTablePtr *new = malloc(sizeof(struct FunTableItem));
-    //if (new == NULL)
-    //error_exit(99, "Failed to allocate memory");
-    new->name = name;
-    new->types = types;
-    new->retvar = retvar;
-    new->sym = NULL;
-    new->sym->act = NULL;
-    new->sym->first = NULL;
-    if (fun == NULL){
-        fun->first = new;
-    } else{
-        fun->act->next = new;
-    }
-    fun->act = new;
-}
-
-void newSym(FunTable *fun, char *name){
-    
-}

@@ -127,7 +127,7 @@ string *addChar(string *s, char c)
     return s;
 }
 
-void createNewFun(FunTable *fun, char *name, char *types, char *retvar)
+void createNewFun(FunTable *fun, char *name, char *types)
 {
     FunTablePtr *new = malloc(sizeof(struct FunTableItem));
     //if (new == NULL)
@@ -135,17 +135,10 @@ void createNewFun(FunTable *fun, char *name, char *types, char *retvar)
     new->name = name;
     new->types = types;
     new->retvar = retvar;
-    new->sym = NULL;
-    new->sym->act = NULL;
-    new->sym->first = NULL;
     if (fun == NULL){
         fun->first = new;
     } else{
         fun->act->next = new;
     }
     fun->act = new;
-}
-
-void newSym(FunTable *fun, char *name){
-    
 }

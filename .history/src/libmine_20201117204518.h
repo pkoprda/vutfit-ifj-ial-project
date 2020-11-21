@@ -18,8 +18,6 @@
 #define LINE_BUFF_LEN 128
 #define MIN_LEN_KEYWORD 2
 #define MAX_LEN_KEYWORD 10
-#define LPTR 0
-#define RPTR 1
 
 #define error_exit(ERROR, M)                                                   \
     fprintf(stderr, "[ERROR:%d] (%s:%d): " M "\n", ERROR, __FILE__, __LINE__); \
@@ -175,36 +173,6 @@ typedef struct
     unsigned int length;
     unsigned int allocSize;
 } string;
-
-typedef struct SymTableItem
-{
-    char *name;
-    int type;
-    char **value;
-    int declared;
-    struct SymtableItem *next;
-} SymTablePtr;
-
-typedef struct SymTable
-{
-    SymTablePtr *first;
-    SymTablePtr *act;
-} SymTable;
-
-typedef struct FunTableItem
-{
-    char *name;
-    char *types;        // func example(int a, double b) (int, string) = "idis"
-    int retvar;         // number of return values
-    struct SymTable *sym;
-    struct FunTableItem *next;
-} FunTablePtr;
-
-typedef struct
-{
-    FunTablePtr *first;
-    FunTablePtr *act;
-} FunTable;
 
 void initStack(Stack *s);
 void *stackTop(Stack *s);

@@ -176,35 +176,25 @@ typedef struct
     unsigned int allocSize;
 } string;
 
-typedef struct SymTableItem
+typedef struct SymTable
 {
     char *name;
     int type;
     char **value;
     int declared;
-    struct SymtableItem *next;
-} SymTablePtr;
+    struct Symtable *Lptr;
+    struct Symtable *Rptr;
+} SymTableItem;
 
-typedef struct SymTable
-{
-    SymTablePtr *first;
-    SymTablePtr *act;
-} SymTable;
-
-typedef struct FunTableItem
+typedef struct FunTable
 {
     char *name;
-    char *types;        // func example(int a, double b) (int, string) = "idis"
+    char *types;        // func example(int a, double b) (int, string) = "isid"
     int retvar;         // number of return values
-    struct SymTable *sym;
-    struct FunTableItem *next;
-} FunTablePtr;
-
-typedef struct
-{
-    FunTablePtr *first;
-    FunTablePtr *act;
-} FunTable;
+    struct SymTable *first;
+    struct FunTable *Lptr;
+    struct FunTable *Rptr;
+} FunTableItem;
 
 void initStack(Stack *s);
 void *stackTop(Stack *s);

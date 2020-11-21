@@ -145,7 +145,3 @@ void createNewFun(FunTable *fun, char *name, char *types, char *retvar)
     }
     fun->act = new;
 }
-
-void newSym(FunTable *fun, char *name){
-    
-}
