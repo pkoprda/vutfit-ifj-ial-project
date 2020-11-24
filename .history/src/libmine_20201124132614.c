@@ -148,7 +148,7 @@ void createNewFun(FunTable *fun, char *name, char *types, int retvar)
 
 void newSym(FunTable *fun, char *name, int type)
 {
-    SymTablePtr *new = malloc(sizeof(struct SymTablePtr));
+    SymTablePtr *new = malloc(sizeof(struct SymTableItem));
     //if (new == NULL)
     //error_exit(99, "Failed to allocate memory");
     new->name = name;

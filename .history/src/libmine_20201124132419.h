@@ -176,13 +176,13 @@ typedef struct
     unsigned int allocSize;
 } string;
 
-typedef struct SymTablePtr
+typedef struct SymTableItem
 {
     char *name;
     int type;
     char **value;
     int declared;
-    struct SymtablePtr *next;
+    struct SymtableItem *next;
 } SymTablePtr;
 
 typedef struct SymTable
@@ -254,7 +254,7 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir);
 void Print_tree(Tree *TempTree);
 
 int semantics();
-void createNewFun(FunTable *fun, char *name, char *types, int retvar);
+void createNewFun(FunTable *fun, char *name, char *types, char *retvar);
 void newSym(FunTable *fun, char *name, int type);
 SymTablePtr *searchSym(FunTable *fun, char *name);
 

@@ -127,7 +127,7 @@ string *addChar(string *s, char c)
     return s;
 }
 
-void createNewFun(FunTable *fun, char *name, char *types, int retvar)
+void createNewFun(FunTable *fun, char *name, char *types, char *retvar)
 {
     FunTablePtr *new = malloc(sizeof(struct FunTableItem));
     //if (new == NULL)
@@ -146,25 +146,11 @@ void createNewFun(FunTable *fun, char *name, char *types, int retvar)
     fun->act = new;
 }
 
-void newSym(FunTable *fun, char *name, int type)
-{
-    SymTablePtr *new = malloc(sizeof(struct SymTablePtr));
-    //if (new == NULL)
-    //error_exit(99, "Failed to allocate memory");
-    new->name = name;
-    new->type = type;
-    new->declared = 1;
-    new->next = NULL;
-    if (fun->act->sym->act == NULL){
-        fun->act->sym->act = new;
-        fun->act->sym->first = new;
-    } else{
-        fun->act->sym->act->next = new;
-    }
+void newSym(FunTable *fun, char *name){
+    
 }
 
-SymTablePtr *searchSym(FunTable *fun, char *name)
-{
+SymTablePtr *searchSym(FunTable *fun, char *name){
     SymTablePtr *tmp = fun->act->sym->first;
     while (tmp != NULL){
         if (strcmp(name, tmp->name) == 0){
@@ -172,5 +158,4 @@ SymTablePtr *searchSym(FunTable *fun, char *name)
         }
         tmp = tmp->next;
     }
-    return NULL;
 }

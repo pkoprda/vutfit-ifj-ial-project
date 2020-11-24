@@ -23,7 +23,7 @@ void ID_def (Tree *ast, FunTable *fun){
     SymTablePtr *tmp = searchSym(fun, name);
     if (tmp == NULL){
         newSym(fun, name, type);
-    } else if (tmp->declared == 1){
+    } else if (tmp->declared = 1){
         error_exit(3, "Variable is defined yet");
     }
 }
@@ -51,7 +51,7 @@ void semCheck (Tree *ast){
                 semCheck(ast->Lptr);
             }
         case N_IF:
-            // msemCheckIf(ast, fun);
+            // semCheckIf(ast, fun);
             break;
         case N_IDENT_DEF:
             ID_def(ast, fun);

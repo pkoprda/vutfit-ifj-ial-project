@@ -159,7 +159,7 @@ void newSym(FunTable *fun, char *name, int type)
         fun->act->sym->act = new;
         fun->act->sym->first = new;
     } else{
-        fun->act->sym->act->next = new;
+        fun->act->sym->act->next = *new;
     }
 }
 
