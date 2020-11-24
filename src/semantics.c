@@ -28,6 +28,10 @@ void ID_def (Tree *ast, FunTable *fun){
     }
 }
 
+// void ID_init (Tree *ast, FunTable *fun){
+    
+// }
+
 void semCheck (Tree *ast){
     switch (ast->type){
         case SEQ:
@@ -55,7 +59,11 @@ void semCheck (Tree *ast){
             break;
         case N_IDENT_DEF:
             ID_def(ast, fun);
+            semCheck(ast->Lptr);
             break;
+        case N_IDENT_INIT:
+            //ID_init(ast, fun);
+
     }
 }
 
