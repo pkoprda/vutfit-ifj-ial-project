@@ -182,7 +182,7 @@ typedef struct SymTablePtr
     int type;
     char **value;
     int declared;
-    struct SymTablePtr *next;
+    struct SymtablePtr *next;
 } SymTablePtr;
 
 typedef struct
@@ -196,7 +196,7 @@ typedef struct FunTableItem
     char *name;
     char *types;        // func example(int a, double b) (int, string) = "idis"
     int retvar;         // number of return values
-    SymTable *sym;
+    struct SymTable *sym;
     struct FunTableItem *next;
 } FunTablePtr;
 

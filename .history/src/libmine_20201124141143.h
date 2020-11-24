@@ -176,20 +176,20 @@ typedef struct
     unsigned int allocSize;
 } string;
 
+typedef struct SymTable
+{
+    SymTablePtr *first;
+    SymTablePtr *act;
+} SymTable;
+
 typedef struct SymTablePtr
 {
     char *name;
     int type;
     char **value;
     int declared;
-    struct SymTablePtr *next;
+    struct SymtablePtr *next;
 } SymTablePtr;
-
-typedef struct
-{
-    SymTablePtr *first;
-    SymTablePtr *act;
-} SymTable;
 
 typedef struct FunTableItem
 {

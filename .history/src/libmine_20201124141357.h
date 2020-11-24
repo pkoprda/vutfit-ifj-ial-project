@@ -182,7 +182,7 @@ typedef struct SymTablePtr
     int type;
     char **value;
     int declared;
-    struct SymTablePtr *next;
+    struct SymtablePtr *next;
 } SymTablePtr;
 
 typedef struct
