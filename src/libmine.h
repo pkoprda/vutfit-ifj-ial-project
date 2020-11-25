@@ -180,8 +180,7 @@ typedef struct SymTablePtr
 {
     char *name;
     int type;
-    char **value;
-    int declared;
+    char *value;
     struct SymTablePtr *next;
 } SymTablePtr;
 

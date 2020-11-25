@@ -167,7 +167,6 @@ void newSym(FunTable *fun, char *name, int type)
     //error_exit(99, "Failed to allocate memory");
     new->name = name;
     new->type = type;
-    new->declared = 1;
     new->next = NULL;
     if (fun->act->sym->act == NULL){
         fun->act->sym->first = new;

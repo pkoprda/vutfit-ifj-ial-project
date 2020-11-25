@@ -132,13 +132,7 @@ void semCheck (Tree *ast){
             }
             break;
         case N_DEF_FUNC:
-            // if (isNextPtr(ast, RPTR)){
-            //     semCheck(ast->Rptr);
-            // }
-            // if (isNextPtr(ast, LPTR)){
-            //     semCheck(ast->Lptr);
-            // }
-            // FUN_def(ast, fun);
+            FUN_def(ast, fun);
             break;
         case N_IF:
             // msemCheckIf(ast, fun);
