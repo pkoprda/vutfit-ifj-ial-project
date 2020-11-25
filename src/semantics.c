@@ -148,6 +148,7 @@ void semCheck (Tree *ast){
             semCheck(ast->Lptr);
             break;
         case N_IDENT_INIT:
+            break;
             //ID_init(ast, fun);
             break;
     }
