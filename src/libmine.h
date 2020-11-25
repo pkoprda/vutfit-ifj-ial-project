@@ -194,8 +194,9 @@ typedef struct
 typedef struct FunTableItem
 {
     char *name;
-    char *types;        // func example(int a, double b) (int, string) = "idis"
+    int types;          // func example(int a, double b) (int, string) = 1213
     int retvar;         // number of return values
+    int count;          // number of return values + params
     SymTable *sym;
     struct FunTableItem *next;
 } FunTablePtr;
@@ -254,9 +255,11 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir);
 void Print_tree(Tree *TempTree);
 
 int semantics();
-void createNewFun(FunTable *fun, char *name, char *types, int retvar);
+void newFun(FunTable *fun, char *name);
 void newSym(FunTable *fun, char *name, int type);
 SymTablePtr *searchSym(FunTable *fun, char *name);
+FunTablePtr *searchFun(FunTable *fun, char *name);
+// void newFun(FunTable *fun, char *name, char *types, int retvar, int count);
 
 extern Stack stack;
 extern Tree *ast;

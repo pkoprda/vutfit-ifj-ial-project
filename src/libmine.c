@@ -127,17 +127,13 @@ string *addChar(string *s, char c)
     return s;
 }
 
-void createNewFun(FunTable *fun, char *name, char *types, int retvar)
+void newFun(FunTable *fun, char *name)
 {
-    FunTablePtr *new = malloc(sizeof(struct FunTableItem));
+    FunTablePtr *new = malloc(sizeof(FunTablePtr));
     //if (new == NULL)
     //error_exit(99, "Failed to allocate memory");
     new->name = name;
-    new->types = types;
-    new->retvar = retvar;
     new->sym = NULL;
-    new->sym->act = NULL;
-    new->sym->first = NULL;
     if (fun == NULL){
         fun->first = new;
     } else{
@@ -146,9 +142,27 @@ void createNewFun(FunTable *fun, char *name, char *types, int retvar)
     fun->act = new;
 }
 
+// void newFun(FunTable *fun, char *name, char *types, int retvar, int count)
+// {
+//     FunTablePtr *new = malloc(sizeof(FunTablePtr));
+//     //if (new == NULL)
+//     //error_exit(99, "Failed to allocate memory");
+//     new->name = name;
+//     new->types = types;
+//     new->retvar = retvar;
+//     new->count = count;
+//     new->sym = NULL;
+//     if (fun == NULL){
+//         fun->first = new;
+//     } else{
+//         fun->act->next = new;
+//     }
+//     fun->act = new;
+// }
+
 void newSym(FunTable *fun, char *name, int type)
 {
-    SymTablePtr *new = malloc(sizeof(struct SymTablePtr));
+    SymTablePtr *new = malloc(sizeof(SymTablePtr));
     //if (new == NULL)
     //error_exit(99, "Failed to allocate memory");
     new->name = name;
@@ -156,16 +170,28 @@ void newSym(FunTable *fun, char *name, int type)
     new->declared = 1;
     new->next = NULL;
     if (fun->act->sym->act == NULL){
-        fun->act->sym->act = new;
         fun->act->sym->first = new;
     } else{
         fun->act->sym->act->next = new;
     }
+    fun->act->sym->act = new;
 }
 
 SymTablePtr *searchSym(FunTable *fun, char *name)
 {
     SymTablePtr *tmp = fun->act->sym->first;
+    while (tmp != NULL){
+        if (strcmp(name, tmp->name) == 0){
+            return tmp;
+        }
+        tmp = tmp->next;
+    }
+    return NULL;
+}
+
+FunTablePtr *searchFun(FunTable *fun, char *name)
+{
+    FunTablePtr *tmp = fun->first;
     while (tmp != NULL){
         if (strcmp(name, tmp->name) == 0){
             return tmp;
