@@ -107,8 +107,8 @@ typedef enum
     N_PARAM_IDENT_STR,
     N_PARAM_IDENT_FLOAT,
     N_LIT_INT,
-    N_LIT_FLOAT,
     N_LIT_STRING,
+    N_LIT_FLOAT,
     RETURN_TYPE_INT,
     RETURN_TYPE_STR,
     RETURN_TYPE_FLOAT,
@@ -193,7 +193,7 @@ typedef SymTItem *SymTable[STsize];
 typedef struct FunTItem
 {
     tKey key;
-    int types;          // func example(int a, double b) (int, string) = 1213
+    int types;          // func example(int a, double b) (int, string) = 1312
     int retvar;         // number of return values
     int count;          // number of return values + params
     SymTable *sym;

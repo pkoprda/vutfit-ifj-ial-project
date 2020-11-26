@@ -11,6 +11,59 @@
 //     }
 // }
 
+int old = 0;
+
+void printhashtable(FunTable *fun){
+    printf ("------------HASH TABLE--------------\n");
+    for ( int i=0; i<FTsize; i++ ) {
+    printf ("%i:",i);
+    FunTItem* ptr = (*fun)[i];
+    while ( ptr != NULL ) {
+        printf (" (%s,%d,%d,%d)",ptr->key,ptr->count,ptr->retvar,ptr->types);
+        /*if ( ptr != UNDEFPTR )
+            cnt++;*/
+        ptr = ptr->next;
+    }
+    printf ("\n");
+
+    }
+    printf ("------------------------------------\n");
+    }
+
+void printsymtable(FunTable *fun)
+
+{
+FunTItem *tmp = ftSearch(fun, "factorial");
+    SymTable *sym = tmp->sym;
+    printf ("------------SYMTABLE--------------\n");
+    for ( int i=0; i<STsize; i++ ) {
+    printf ("%i:",i);
+    SymTItem* ptr = (*sym)[i];
+    while ( ptr != NULL ) {
+        printf (" (%s,%s,%d)",ptr->key,ptr->value,ptr->type);
+
+        ptr = ptr->next;
+    }
+    printf ("\n"); 
+    }
+    printf ("------------------------------------\n");
+    tmp = ftSearch(fun, "main");
+    sym = tmp->sym;
+    printf ("------------SYMTABLE--------------\n");
+    for ( int i=0; i<STsize; i++ ) {
+    printf ("%i:",i);
+    SymTItem* ptr = (*sym)[i];
+    while ( ptr != NULL ) {
+        printf (" (%s,%s,%d)",ptr->key,ptr->value,ptr->type);
+
+        ptr = ptr->next;
+    }
+    printf ("\n"); 
+
+    }
+    printf ("------------------------------------\n");
+}
+
 int cnt(Tree *ast, int i){
     Tree *tmp = ast;
     if (i == -1){
@@ -66,6 +119,154 @@ int getTypes(Tree *ast, int retvar, int count, SymTable *sym){
     return types;
 }
 
+// int statm(Tree *ast, )
+// {
+//     int ret = 0;
+//     Tree *tmp = ast->Lptr;
+//     while (tmp != NULL){
+//         int ret = statm(ast);
+//     }
+
+//     return ret;
+// }
+
+void statm(Tree *ast, SymTable *sym)
+{
+    if (ast->Rptr->type >= N_PLUS && ast->Rptr->type <= N_DIV){
+        statm(ast->Rptr, sym);
+    }
+    if (ast->Lptr->type >= N_PLUS && ast->Lptr->type <= N_DIV){
+        statm(ast->Lptr, sym);
+    }
+    if (ast->Rptr->type >= N_LIT_INT && ast->Rptr->type <= N_LIT_STRING){
+        int tmp = old;
+        old = (ast->Rptr->type) - 7;
+        if (tmp != old && tmp != 0){
+            error_exit(5, "Operation with different data types");
+        }
+    }
+    if (ast->Lptr->type >= N_LIT_INT && ast->Lptr->type <= N_LIT_STRING){
+        int tmp = old;
+        old = (ast->Lptr->type - 7);
+        if (tmp != old && tmp != 0){
+            error_exit(5, "Operation with different data types");
+        }
+    }
+    if (ast->Rptr->type == N_IDENTIFIER){
+        SymTItem *found = stSearch(sym, ast->Rptr->value);
+        if (found == NULL){
+            error_exit(3, "Variable not defined yet");
+        }
+        int tmp = old;
+        old = found->type;
+        if (tmp != old && tmp != 0){
+            error_exit(5, "Operation with different data types");
+        }
+    }
+    if (ast->Lptr->type == N_IDENTIFIER){
+        SymTItem *found = stSearch(sym, ast->Lptr->value);
+        if (found == NULL){
+            error_exit(3, "Variable not defined yet");
+        }
+        int tmp = old;
+        old = found->type;
+        if (tmp != old && tmp != 0){
+            error_exit(5, "Operation with different data types");
+        }
+    }
+}
+
+int getIDtype (Tree *ast, char *value, SymTable *sym)
+{
+    switch (ast->type)
+    {
+        case N_LIT_INT:
+        case N_LIT_STRING:
+        case N_LIT_FLOAT: ;
+            value = ast->value;
+            return (ast->type - 7);
+            break;
+
+        case N_MINUS:
+        case N_PLUS:
+        case N_MULL:
+        case N_DIV: ;
+            statm(ast, sym);
+            int type = old;
+            old = 0;
+            return type;
+            break;
+        case N_INPUTI:
+        case N_INPUTS:
+        case N_INPUTF: ;
+            printf("sem\n");
+            return (ast->type - 14);
+            break;
+        case SEQ:
+            return getIDtype(ast->Rptr, value, sym);
+            break;
+    }
+    value = value;
+    return 0;
+ }
+
+void InFuncGo (Tree *ast, SymTable *sym)
+{
+    if (ast->type == SEQ)
+    {
+        switch(ast->Rptr->type)
+        {
+            case N_IDENT_DEF: ;
+                char *value = NULL;
+                int type = getIDtype (ast->Rptr->Rptr, value, sym);
+                Tree *tmp = ast->Rptr->Lptr;
+                printf("tmp---%d\n", tmp->type);
+                if (tmp->type != SEQ){
+                    printf("ide ide--v if\n");
+                    newSym(tmp->value, type,value,sym);
+                    break;
+                }
+                while (tmp != NULL){
+                    printf("ide ide--v seq\n");
+                    newSym(tmp->Rptr->value, type, value, sym);
+                    tmp = tmp->Lptr;
+                }
+                printf("ide ide--\n");
+                break;
+            case N_IDENT_INIT: ;
+                char *value1 = NULL;
+                Tree *tmp1 = ast->Rptr->Lptr;
+                int type1 = getIDtype(ast->Rptr->Rptr, value1, sym);
+                printf("type1----%d\n", type1);
+                SymTItem *sItem;
+                if (tmp1->type != SEQ){
+                    sItem = stSearch(sym, tmp1->value);
+                    if (sItem == NULL){
+                        error_exit(3, "Variable not defined yet");
+                    }
+                    if (type1 != sItem->type){
+                        error_exit(5, "Type of variable is not equal to statement");
+                    }
+                    break;
+                }
+                while (tmp1 != NULL){
+                    printf("ide ide--v seq\n");
+                    sItem = stSearch(sym, tmp1->Rptr->value);
+                    if (type1 != sItem->type){
+                        error_exit(5, "Type of variable is not equal to statement");
+                    }
+                    tmp1 = tmp1->Lptr;
+                }
+                break;
+        }
+    }
+    if (ast->Lptr != NULL){
+        InFuncGo(ast->Lptr, sym);
+    } else{
+        return;
+    }
+}
+
 void FUN_def (Tree *ast, FunTable *fun){
     char *name = ast->value;
     SymTable *sym = (SymTable*) malloc(sizeof(SymTable));
@@ -80,52 +281,10 @@ void FUN_def (Tree *ast, FunTable *fun){
         int types = getTypes(ast->Lptr, retvar, count, sym);
         fItem->types = types;
     }
+    InFuncGo(ast->Rptr,sym);
 }
 
-// void ID_def (Tree *ast, FunTable *fun){
-//     char *name = ast->Lptr->value;
-//     int type = ast->Rptr->type;
-//     SymTablePtr *tmp = searchSym(fun, name);
-//     if (tmp == NULL){
-//         newSym(fun, name, type);
-//     } else{
-//         error_exit(3, "Variable is defined yet");
-//     }
-// }
-
-// void semCheck (Tree *ast){
-//     switch (ast->type){
-//         case SEQ:
-//             if (isNextPtr(ast, LPTR)){
-//                 semCheck(ast->Lptr);
-//             }
-//             if (isNextPtr(ast, RPTR)){
-//                 semCheck(ast->Rptr);
-//             }
-//             break;
-//         case PACKAGE_MAIN:
-//             if (isNextPtr(ast, LPTR)){
-//                 semCheck(ast->Lptr);
-//             }
-//             break;
-//         case N_DEF_FUNC:
-//             FUN_def(ast, fun);
-//             break;
-//         case N_IF:
-//             // msemCheckIf(ast, fun);
-//             break;
-//         case N_IDENT_DEF:
-//             ID_def(ast, fun);
-//             semCheck(ast->Lptr);
-//             break;
-//         case N_IDENT_INIT:
-//             break;
-//             //ID_init(ast, fun);
-//             break;
-//     }
-// }
-
-void go(Tree *ast, FunTable *fun){
+void FuncLookup(Tree *ast, FunTable *fun){
     if (ast->Lptr == NULL){
         return;
     }
@@ -133,53 +292,18 @@ void go(Tree *ast, FunTable *fun){
     if (ast->type == SEQ){
         if (ast->Rptr->type == N_DEF_FUNC){
             FUN_def(ast->Rptr, fun);
-            go(ast, fun);
         }
+        FuncLookup(ast, fun);
     }
 }
 
-    void printhashtable(FunTable *fun){
-        printf ("------------HASH TABLE--------------\n");
-	    for ( int i=0; i<FTsize; i++ ) {
-		printf ("%i:",i);
-		FunTItem* ptr = (*fun)[i];
-		while ( ptr != NULL ) {
-			printf (" (%s,%d,%d,%d)",ptr->key,ptr->count,ptr->retvar,ptr->types);
-			/*if ( ptr != UNDEFPTR )
-				cnt++;*/
-			ptr = ptr->next;
-		}
-		printf ("\n");
-
-	}
-    printf ("------------------------------------\n");
-    }
-
-    void printsymtable(FunTable *fun)
-
-    {
-    FunTItem *tmp = ftSearch(fun, "factorial");
-        SymTable *sym = tmp->sym;
-        printf ("------------SYMTABLE--------------\n");
-	for ( int i=0; i<STsize; i++ ) {
-		printf ("%i:",i);
-		SymTItem* ptr = (*sym)[i];
-		while ( ptr != NULL ) {
-			printf (" (%s,%s,%d)",ptr->key,ptr->value,ptr->type);
-
-			ptr = ptr->next;
-		}
-		printf ("\n"); 
-
-    }
-    printf ("------------------------------------\n");
-    }
+   
 
 int semantics(){
     printf ("===================semantika================== \n \n");
     FunTable *fun = (FunTable*) malloc(sizeof(FunTable));
     ftInit(fun);
-    go(ast->Rptr, fun);
+    FuncLookup(ast->Rptr, fun);
 
     printhashtable(fun);
     printsymtable(fun);

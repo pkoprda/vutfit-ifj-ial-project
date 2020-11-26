@@ -196,7 +196,7 @@ void newSym(tKey key, int type, char *value, SymTable *sym)
         new->key = key;
         new->type = type;
         new->value = value;
-        int hash = hashCode(key, FTsize);
+        int hash = hashCode(key, STsize);
         new->next = (*sym)[hash];
         (*sym)[hash] = new;
     }
