@@ -54,3 +54,4 @@ dkms.conf
 .history/*
 .vscode/*
 bin/main
+tests/mojtest.go

@@ -45,7 +45,7 @@ int getTypes(Tree *ast, int retvar, int count, SymTable *sym){
             tmp = 2;
         }
         types = types * 10 + tmp;
-        newSym(tmp1->Rptr->value, tmp1->Rptr->type, NULL, sym);
+        newSym(tmp1->Rptr->value, tmp1->Rptr->type-4, NULL, sym);
         tmp1 = tmp1->Lptr;
         i++;
         count--;
@@ -138,9 +138,55 @@ void go(Tree *ast, FunTable *fun){
     }
 }
 
+    void printhashtable(FunTable *fun){
+        printf ("------------HASH TABLE--------------\n");
+	    for ( int i=0; i<FTsize; i++ ) {
+		printf ("%i:",i);
+		FunTItem* ptr = (*fun)[i];
+		while ( ptr != NULL ) {
+			printf (" (%s,%d,%d,%d)",ptr->key,ptr->count,ptr->retvar,ptr->types);
+			/*if ( ptr != UNDEFPTR )
+				cnt++;*/
+			ptr = ptr->next;
+		}
+		printf ("\n");
+
+	}
+    printf ("------------------------------------\n");
+    }
+
+    void printsymtable(FunTable *fun)
+
+    {
+    FunTItem *tmp = ftSearch(fun, "factorial");
+        SymTable *sym = tmp->sym;
+        printf ("------------SYMTABLE--------------\n");
+	for ( int i=0; i<STsize; i++ ) {
+		printf ("%i:",i);
+		SymTItem* ptr = (*sym)[i];
+		while ( ptr != NULL ) {
+			printf (" (%s,%s,%d)",ptr->key,ptr->value,ptr->type);
+
+			ptr = ptr->next;
+		}
+		printf ("\n"); 
+
+    }
+    printf ("------------------------------------\n");
+    }
+
 int semantics(){
+    printf ("===================semantika================== \n \n");
     FunTable *fun = (FunTable*) malloc(sizeof(FunTable));
     ftInit(fun);
     go(ast->Rptr, fun);
+
+    printhashtable(fun);
+    printsymtable(fun);
+	
+    printf ("===========koniec semantiky====================\n \n");
+
     return 0;
+
+    
 }
