@@ -1,4 +1,0 @@
-/* Toto je
-viacradkovy
-komentar
-*/
