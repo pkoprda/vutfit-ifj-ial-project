@@ -133,6 +133,13 @@ int getTypes(Tree *ast, int retvar, int count, SymTable *sym){
 void statm(Tree *ast, SymTable *sym)
 {
     if (ast->Rptr->type >= N_PLUS && ast->Rptr->type <= N_DIV){
+        if( ast->Rptr->type == N_DIV){
+            if (ast->Rptr->Rptr->type == N_LIT_INT){
+                if (strcmp(ast->Rptr->Rptr->value,"0") == 0){
+                    error_exit(9, "Division by 0");
+                }
+            }
+        }
         statm(ast->Rptr, sym);
     }
     if (ast->Lptr->type >= N_PLUS && ast->Lptr->type <= N_DIV){
