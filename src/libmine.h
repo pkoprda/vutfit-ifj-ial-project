@@ -20,6 +20,8 @@
 #define MAX_LEN_KEYWORD 10
 #define LPTR 0
 #define RPTR 1
+#define FTsize 7
+#define STsize 11
 
 #define error_exit(ERROR, M)                                                   \
     fprintf(stderr, "[ERROR:%d] (%s:%d): " M "\n", ERROR, __FILE__, __LINE__); \
@@ -176,35 +178,29 @@ typedef struct
     unsigned int allocSize;
 } string;
 
-typedef struct SymTablePtr
+typedef char* tKey;
+
+typedef struct SymTItem
 {
-    char *name;
+    tKey key;
     int type;
     char *value;
-    struct SymTablePtr *next;
-} SymTablePtr;
+    struct SymTItem *next;
+} SymTItem;
 
-typedef struct
-{
-    SymTablePtr *first;
-    SymTablePtr *act;
-} SymTable;
+typedef SymTItem *SymTable[STsize];
 
-typedef struct FunTableItem
+typedef struct FunTItem
 {
-    char *name;
+    tKey key;
     int types;          // func example(int a, double b) (int, string) = 1213
     int retvar;         // number of return values
     int count;          // number of return values + params
     SymTable *sym;
-    struct FunTableItem *next;
-} FunTablePtr;
+    struct FunTItem *next;
+} FunTItem;
 
-typedef struct
-{
-    FunTablePtr *first;
-    FunTablePtr *act;
-} FunTable;
+typedef FunTItem *FunTable[FTsize];
 
 void initStack(Stack *s);
 void *stackTop(Stack *s);
@@ -254,11 +250,13 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir);
 void Print_tree(Tree *TempTree);
 
 int semantics();
-void newFun(FunTable *fun, char *name);
-void newSym(FunTable *fun, char *name, int type);
-SymTablePtr *searchSym(FunTable *fun, char *name);
-FunTablePtr *searchFun(FunTable *fun, char *name);
-// void newFun(FunTable *fun, char *name, char *types, int retvar, int count);
+void ftInit(FunTable *fun);
+void stInit(SymTable *sym);
+int hashCode(tKey key, int size);
+void newFun(FunTable *fun, tKey key, int retvar, int count, int types, SymTable *sym);
+void newSym(tKey key, int type, char *value, SymTable *sym);
+FunTItem *ftSearch(FunTable *fun, tKey key);
+SymTItem *stSearch(SymTable *sym, tKey key);
 
 extern Stack stack;
 extern Tree *ast;

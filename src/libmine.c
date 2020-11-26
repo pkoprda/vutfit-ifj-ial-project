@@ -127,75 +127,90 @@ string *addChar(string *s, char c)
     return s;
 }
 
-void newFun(FunTable *fun, char *name)
+int hashCode(tKey key, int size)
 {
-    FunTablePtr *new = malloc(sizeof(FunTablePtr));
-    //if (new == NULL)
-    //error_exit(99, "Failed to allocate memory");
-    new->name = name;
-    new->sym = NULL;
-    if (fun == NULL){
-        fun->first = new;
-    } else{
-        fun->act->next = new;
+    int retval = 1;
+    int keylen = strlen(key);
+    for (int i = 0; i<keylen; i++){
+        retval += key[i];
     }
-    fun->act = new;
+    return (retval % size);
 }
 
-// void newFun(FunTable *fun, char *name, char *types, int retvar, int count)
-// {
-//     FunTablePtr *new = malloc(sizeof(FunTablePtr));
-//     //if (new == NULL)
-//     //error_exit(99, "Failed to allocate memory");
-//     new->name = name;
-//     new->types = types;
-//     new->retvar = retvar;
-//     new->count = count;
-//     new->sym = NULL;
-//     if (fun == NULL){
-//         fun->first = new;
-//     } else{
-//         fun->act->next = new;
-//     }
-//     fun->act = new;
-// }
-
-void newSym(FunTable *fun, char *name, int type)
+void ftInit(FunTable *fun)
 {
-    SymTablePtr *new = malloc(sizeof(SymTablePtr));
-    //if (new == NULL)
-    //error_exit(99, "Failed to allocate memory");
-    new->name = name;
-    new->type = type;
-    new->next = NULL;
-    if (fun->act->sym->act == NULL){
-        fun->act->sym->first = new;
-    } else{
-        fun->act->sym->act->next = new;
-    }
-    fun->act->sym->act = new;
+	for (int i = 0 ; i<FTsize; i++){
+		(*fun)[i] = NULL;
+	}
 }
 
-SymTablePtr *searchSym(FunTable *fun, char *name)
+void stInit(SymTable *sym)
 {
-    SymTablePtr *tmp = fun->act->sym->first;
+	for (int i = 0 ; i<STsize; i++){
+		(*sym)[i] = NULL;
+	}
+}
+
+void newFun(FunTable *fun, tKey key, int retvar, int count, int types, SymTable *sym)
+{
+    FunTItem *tmp = ftSearch(fun, key);
+    if (tmp != NULL){
+        error_exit(3, "Function is defined yet");
+    } else{
+        FunTItem *new = malloc(sizeof(FunTItem));
+        //if (new == NULL)
+        //error_exit(99, "Failed to allocate memory");
+        new->key = key;
+        new->count = count;
+        new->retvar = retvar;
+        new->types = types;
+        new->sym = sym;
+        int hash = hashCode(key, FTsize);
+        new->next = (*fun)[hash];
+        (*fun)[hash] = new;
+    }
+}
+
+FunTItem *ftSearch(FunTable *fun, tKey key)
+{
+    int hash = hashCode(key, FTsize);
+    FunTItem *tmp = (*fun)[hash];
     while (tmp != NULL){
-        if (strcmp(name, tmp->name) == 0){
+        if (!strcmp(tmp->key, key)){
             return tmp;
         }
         tmp = tmp->next;
     }
-    return NULL;
+	return NULL;
 }
 
-FunTablePtr *searchFun(FunTable *fun, char *name)
+void newSym(tKey key, int type, char *value, SymTable *sym)
 {
-    FunTablePtr *tmp = fun->first;
+    SymTItem *tmp = stSearch(sym, key);
+    if (tmp != NULL){
+        error_exit(3, "Variable is defined yet");
+    } else{
+        SymTItem *new = malloc(sizeof(SymTItem));
+        //if (new == NULL)
+        //error_exit(99, "Failed to allocate memory");
+        new->key = key;
+        new->type = type;
+        new->value = value;
+        int hash = hashCode(key, FTsize);
+        new->next = (*sym)[hash];
+        (*sym)[hash] = new;
+    }
+}
+
+SymTItem *stSearch(SymTable *sym, tKey key)
+{
+    int hash = hashCode(key, STsize);
+    SymTItem *tmp = (*sym)[hash];
     while (tmp != NULL){
-        if (strcmp(name, tmp->name) == 0){
+        if (!strcmp(tmp->key, key)){
             return tmp;
         }
         tmp = tmp->next;
     }
-    return NULL;
+	return NULL;
 }

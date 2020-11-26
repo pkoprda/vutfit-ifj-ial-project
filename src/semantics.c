@@ -1,30 +1,13 @@
 #include "libmine.h"
 
-FunTable *fun;
-
-bool isNextPtr (Tree *ast, int i){
-    // lavy ptr, i == 0
-    if (i == LPTR){
-        return ast->Lptr != NULL;
-    }
-    // pravy ptr, i == 1
-    else{
-        return ast->Rptr != NULL;
-    }
-}
-
-// void semCheckIf (Tree *ast, FunTable *fun){
-//     Tree *tmp = ast->Lptr;
-// }
-
-// void findParRet(Tree *ast){
-//     int i = 0;
-//     char name[] = "000000";
-//     if (ast->Lptr->type == N_PARAMS_RETURNTYPES){
-//         Tree *tmp = ast->Lptr;
-//         while (tmp != NULL){
-
-//         }
+// bool isNextPtr (Tree *ast, int i){
+//     // lavy ptr, i == 0
+//     if (i == LPTR){
+//         return ast->Lptr != NULL;
+//     }
+//     // pravy ptr, i == 1
+//     else{
+//         return ast->Rptr != NULL;
 //     }
 // }
 
@@ -47,7 +30,7 @@ int cnt(Tree *ast, int i){
     return i;
 }
 
-int getTypes(Tree *ast, int retvar, int count, FunTable *fun){
+int getTypes(Tree *ast, int retvar, int count, SymTable *sym){
     Tree *tmp1 = ast->Lptr;
     Tree *tmp2 = ast->Rptr;
     int i = 0;
@@ -62,7 +45,7 @@ int getTypes(Tree *ast, int retvar, int count, FunTable *fun){
             tmp = 2;
         }
         types = types * 10 + tmp;
-        newSym(fun, tmp1->Rptr->value, tmp1->Rptr->type);
+        newSym(tmp1->Rptr->value, tmp1->Rptr->type, NULL, sym);
         tmp1 = tmp1->Lptr;
         i++;
         count--;
@@ -85,70 +68,79 @@ int getTypes(Tree *ast, int retvar, int count, FunTable *fun){
 
 void FUN_def (Tree *ast, FunTable *fun){
     char *name = ast->value;
-    FunTablePtr *tmp = searchFun(fun, name);
-    if (tmp != NULL){
-        error_exit(3, "Function is defined yet");
-    }
-    newFun(fun, name);
+    SymTable *sym = (SymTable*) malloc(sizeof(SymTable));
+    stInit(sym);
     if (strcmp(name, "main") == 0){
-        fun->act->count = 0;
-        fun->act->retvar = 0;
-        fun->act->types = 0;
+        newFun(fun, name, 0, 0, 0, sym);
     } else{
-        fun->act->retvar = cnt(ast->Lptr, -1);
-        fun->act->count = cnt(ast->Lptr, fun->act->retvar);
-        fun->act->types = getTypes(ast->Lptr, fun->act->retvar, fun->act->count, fun);
+        int retvar = cnt(ast->Lptr, -1);
+        int count = cnt(ast->Lptr, retvar);
+        newFun(fun, name, retvar, count, 0, sym);
+        FunTItem *fItem= ftSearch(fun, name);
+        int types = getTypes(ast->Lptr, retvar, count, sym);
+        fItem->types = types;
     }
 }
 
-void ID_def (Tree *ast, FunTable *fun){
-    char *name = ast->Lptr->value;
-    int type = ast->Rptr->type;
-    SymTablePtr *tmp = searchSym(fun, name);
-    if (tmp == NULL){
-        newSym(fun, name, type);
-    } else{
-        error_exit(3, "Variable is defined yet");
-    }
-}
-
-// void ID_init (Tree *ast, FunTable *fun){
-    
+// void ID_def (Tree *ast, FunTable *fun){
+//     char *name = ast->Lptr->value;
+//     int type = ast->Rptr->type;
+//     SymTablePtr *tmp = searchSym(fun, name);
+//     if (tmp == NULL){
+//         newSym(fun, name, type);
+//     } else{
+//         error_exit(3, "Variable is defined yet");
+//     }
 // }
 
-void semCheck (Tree *ast){
-    switch (ast->type){
-        case SEQ:
-            if (isNextPtr(ast, LPTR)){
-                semCheck(ast->Lptr);
-            }
-            if (isNextPtr(ast, RPTR)){
-                semCheck(ast->Rptr);
-            }
-            break;
-        case PACKAGE_MAIN:
-            if (isNextPtr(ast, LPTR)){
-                semCheck(ast->Lptr);
-            }
-            break;
-        case N_DEF_FUNC:
-            FUN_def(ast, fun);
-            break;
-        case N_IF:
-            // msemCheckIf(ast, fun);
-            break;
-        case N_IDENT_DEF:
-            ID_def(ast, fun);
-            semCheck(ast->Lptr);
-            break;
-        case N_IDENT_INIT:
-            break;
-            //ID_init(ast, fun);
-            break;
+// void semCheck (Tree *ast){
+//     switch (ast->type){
+//         case SEQ:
+//             if (isNextPtr(ast, LPTR)){
+//                 semCheck(ast->Lptr);
+//             }
+//             if (isNextPtr(ast, RPTR)){
+//                 semCheck(ast->Rptr);
+//             }
+//             break;
+//         case PACKAGE_MAIN:
+//             if (isNextPtr(ast, LPTR)){
+//                 semCheck(ast->Lptr);
+//             }
+//             break;
+//         case N_DEF_FUNC:
+//             FUN_def(ast, fun);
+//             break;
+//         case N_IF:
+//             // msemCheckIf(ast, fun);
+//             break;
+//         case N_IDENT_DEF:
+//             ID_def(ast, fun);
+//             semCheck(ast->Lptr);
+//             break;
+//         case N_IDENT_INIT:
+//             break;
+//             //ID_init(ast, fun);
+//             break;
+//     }
+// }
+
+void go(Tree *ast, FunTable *fun){
+    if (ast->Lptr == NULL){
+        return;
+    }
+    ast = ast->Lptr;
+    if (ast->type == SEQ){
+        if (ast->Rptr->type == N_DEF_FUNC){
+            FUN_def(ast->Rptr, fun);
+            go(ast, fun);
+        }
     }
 }
 
 int semantics(){
-    semCheck(ast);
+    FunTable *fun = (FunTable*) malloc(sizeof(FunTable));
+    ftInit(fun);
+    go(ast->Rptr, fun);
     return 0;
 }
