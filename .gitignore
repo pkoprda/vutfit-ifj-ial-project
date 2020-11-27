@@ -51,7 +51,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-.history/*
-.vscode/*
+# VSCode
+.vscode/
+
 bin/main
 tests/mojtest.go

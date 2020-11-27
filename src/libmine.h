@@ -258,5 +258,7 @@ void newSym(tKey key, int type, char *value, SymTable *sym);
 FunTItem *ftSearch(FunTable *fun, tKey key);
 SymTItem *stSearch(SymTable *sym, tKey key);
 
+int generate();
+
 extern Stack stack;
 extern Tree *ast;

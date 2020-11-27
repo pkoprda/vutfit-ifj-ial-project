@@ -64,7 +64,7 @@ int parser()
     Print_tree(ast);
     if (func_main_defined != true)
     {
-        error_exit(3, "Funcion main not defined");
+        error_exit(SEM_ERROR_UNDEF, "Semantic error! Function main not defined.");
     }
     return 0;
 }
@@ -103,7 +103,7 @@ Tree *prolog()
     tok = getToken(&stack);
     if (tok == NULL)
     {
-        error_exit(SYNTAX_ERROR, "Syntax error. Package missing");
+        error_exit(SYNTAX_ERROR, "Syntax error! Package missing.");
     }
     switch (tok->type)
     {
@@ -113,7 +113,7 @@ Tree *prolog()
         root = createNode(SEQ, program(), createLeaf(PACKAGE_MAIN, NULL));
         break;
     default:
-        error_exit(SYNTAX_ERROR, "Syntax error. Package missing");
+        error_exit(SYNTAX_ERROR, "Syntax error! Package missing.");
         break;
     }
     return root;
@@ -148,7 +148,7 @@ Tree *program()
         }
         else
         {
-            error_exit(SYNTAX_ERROR, "Syntax error");
+            error_exit(SYNTAX_ERROR, "Syntax error!");
         }
 
         expectToken(TOKEN_ROUND_LBRACKET);
@@ -156,14 +156,14 @@ Tree *program()
 
         if (help->type == FUNC_MAIN && parameters != NULL)
         {
-            error_exit(6, "Function main has to have no parameters");
+            error_exit(SEM_ERROR_PARAMS, "Function main has to have no parameters");
         }
 
         expectToken(TOKEN_ROUND_RBRACKET);
         returntypes = rt();
         if (help->type == FUNC_MAIN && returntypes != NULL)
         {
-            error_exit(6, "Function main has to have no return types");
+            error_exit(SEM_ERROR_PARAMS, "Function main has to have no return types");
         }
 
         expectToken(TOKEN_CURLY_LBRACKET);
@@ -248,7 +248,7 @@ Tree *getRT()
         ungetToken(&stack);
         return NULL;
     default:
-        error_exit(SYNTAX_ERROR, "Syntax error");
+        error_exit(SYNTAX_ERROR, "Syntax error!");
     }
 }
 
@@ -273,7 +273,7 @@ Tree *params()
             param = createLeaf(N_PARAM_IDENT_STR, val);
             break;
         default:
-            error_exit(SYNTAX_ERROR, "Syntax error");
+            error_exit(SYNTAX_ERROR, "Syntax error!");
         }
     }
     else
@@ -445,7 +445,7 @@ Tree *stmt2(char *name)
         }
         else
         {
-            error_exit(2, "Syntax error.");
+            error_exit(SYNTAX_ERROR, "Syntax error!");
         }
         break;
     }
@@ -473,7 +473,7 @@ Tree *stmt3()
     }
     else
     {
-        error_exit(SYNTAX_ERROR, "SYNTAX ERROR");
+        error_exit(SYNTAX_ERROR, "Syntax error!");
     }
     return root;
 }
@@ -537,9 +537,11 @@ Tree *terms()
     case TOKEN_FLOAT:
         return createNode(SEQ, terms2(), createLeaf(N_LIT_FLOAT, tok->value));
         break;
+
     case TOKEN_STRING:
         return createNode(SEQ, terms2(), createLeaf(N_LIT_STRING, tok->value));
         break;
+
     case TOKEN_IDENTIF:
         return createNode(SEQ, terms2(), createLeaf(N_IDENTIFIER, tok->value));
         break;
@@ -634,55 +636,46 @@ Tree *expr(int precedence)
         /*tok = getToken(&stack);
         ungetT = true;*/
         break;
+    case FUNC_INT2FLOAT:
+    case FUNC_FLOAT2INT:
     case FUNC_LEN:
-        root = createLeaf(table[tok->type].node, NULL);
-        expectToken(TOKEN_ROUND_LBRACKET);
-        t = getToken(&stack);
-        if (t->type == TOKEN_STRING || t->type == TOKEN_IDENTIF)
-        {
-            root->value = t->value;
-        }
-        else
-        {
-            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
-        }
-        expectToken(TOKEN_ROUND_RBRACKET);
-        break;
     case FUNC_CHR:
         root = createLeaf(table[tok->type].node, NULL);
         expectToken(TOKEN_ROUND_LBRACKET);
         t = getToken(&stack);
-        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        if (t->type == TOKEN_IDENTIF || t->type == TOKEN_INT || t->type == TOKEN_FLOAT || t->type == TOKEN_STRING)
         {
             root->value = t->value;
         }
         else
         {
-            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "Syntax error!");
         }
+        
         expectToken(TOKEN_ROUND_RBRACKET);
         break;
+
     case FUNC_ORD:
         root = createNode(table[tok->type].node, NULL, NULL);
         expectToken(TOKEN_ROUND_LBRACKET);
         t = getToken(&stack);
-        if (t->type == TOKEN_STRING || t->type == TOKEN_IDENTIF)
+        if (t->type == TOKEN_IDENTIF || t->type == TOKEN_INT || t->type == TOKEN_FLOAT || t->type == TOKEN_STRING)
         {
             root->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
         else
         {
-            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "Syntax error!")
         }
         expectToken(TOKEN_COMMA);
         t = getToken(&stack);
-        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        if (t->type == TOKEN_IDENTIF || t->type == TOKEN_INT || t->type == TOKEN_FLOAT || t->type == TOKEN_STRING)
         {
             root->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
         else
         {
-            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "Syntax error!")
         }
         expectToken(TOKEN_ROUND_RBRACKET);
         break;
@@ -690,33 +683,33 @@ Tree *expr(int precedence)
         root = createNode(table[tok->type].node, NULL, NULL);
         expectToken(TOKEN_ROUND_LBRACKET);
         t = getToken(&stack);
-        if (t->type == TOKEN_STRING || t->type == TOKEN_IDENTIF)
+        if (t->type == TOKEN_IDENTIF || t->type == TOKEN_INT || t->type == TOKEN_FLOAT || t->type == TOKEN_STRING)
         {
             root->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
         else
         {
-            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "Syntax error!")
         }
         expectToken(TOKEN_COMMA);
         t = getToken(&stack);
-        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        if (t->type == TOKEN_IDENTIF || t->type == TOKEN_INT || t->type == TOKEN_FLOAT || t->type == TOKEN_STRING)
         {
             root->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
         else
         {
-            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "Syntax error!")
         }
         expectToken(TOKEN_COMMA);
         t = getToken(&stack);
-        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        if (t->type == TOKEN_IDENTIF || t->type == TOKEN_INT || t->type == TOKEN_FLOAT || t->type == TOKEN_STRING)
         {
             root->Lptr->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
         else
         {
-            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
+            error_exit(SYNTAX_ERROR, "Syntax error!")
         }
         expectToken(TOKEN_ROUND_RBRACKET);
         break;
