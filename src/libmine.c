@@ -214,3 +214,38 @@ SymTItem *stSearch(SymTable *sym, tKey key)
     }
 	return NULL;
 }
+
+void convertString(char* val)
+{
+    if (!val) return;
+
+    val++;
+    val[strlen(val)-1] = '\0';
+
+    char *str = my_strdup(val);
+    char *escape =  "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x20\x23\x5c";
+
+    while(*str != '\0') 
+    {
+        if (strchr(escape, *str)) 
+        {
+            if (*str < 10) 
+            {
+                printf("\\00%d", *str);
+            } 
+            else if (*str > 100) 
+            {
+                printf("\\%d", *str);
+            } 
+            else 
+            {
+                printf("\\0%d", *str);
+            }
+        } 
+        else 
+        {
+            printf("%c", *str);
+        }
+    str++;
+}
+}

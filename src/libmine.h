@@ -221,6 +221,7 @@ string *addChar(string *buffer, char c);
 void initString(string *s);
 TokenPtr getToken(Stack *s);
 void ungetToken(Stack *s);
+void convertString(char* val);
 
 int parser();
 Tree *parse();
@@ -262,7 +263,9 @@ SymTItem *stSearch(SymTable *sym, tKey key);
 extern Stack stack;
 extern Tree *ast;
 
-void generate_header();
-void generate_main_start();
-void generate_main_end();
-void generate_print(int type, char* value);
+void generate();
+void generate_label(Tree *ast);
+void generate_function(Tree *ast);
+void generate_var_def(Tree *ast);
+void generate_var_init(Tree *ast);
+void generate_print(Tree *ast);

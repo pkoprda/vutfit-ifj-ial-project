@@ -172,12 +172,9 @@ Tree *program()
         if (parameters != NULL || returntypes != NULL)
             params_returntypes = createNode(N_PARAMS_RETURNTYPES, parameters, returntypes);
            
-        generate_header();
-        generate_main_start();
         func = createNode(N_DEF_FUNC, params_returntypes, stmt());
         func->value = func_name;
         expectToken(TOKEN_CURLY_RBRACKET);
-        generate_main_end();
         optionalEOL();
         root = createNode(SEQ, program(), func);
     }
@@ -536,15 +533,12 @@ Tree *terms()
     switch (tok->type)
     {
     case TOKEN_INT:
-        generate_print(TOKEN_INT, tok->value);
         return createNode(SEQ, terms2(), createLeaf(N_LIT_INT, tok->value));
         break;
     case TOKEN_FLOAT:
-        generate_print(TOKEN_FLOAT, tok->value);
         return createNode(SEQ, terms2(), createLeaf(N_LIT_FLOAT, tok->value));
         break;
     case TOKEN_STRING:
-        generate_print(TOKEN_STRING, tok->value);
         return createNode(SEQ, terms2(), createLeaf(N_LIT_STRING, tok->value));
         break;
     case TOKEN_IDENTIF:

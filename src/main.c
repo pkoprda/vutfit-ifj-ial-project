@@ -5,5 +5,6 @@ int main()
     lexer();
     parser();
     semantics();
+    generate();
     return 0;
 }
