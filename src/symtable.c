@@ -168,7 +168,7 @@ void statm(Tree *ast, SymTable *sym)
         SymTItem *found = stSearch(sym, ast->Rptr->value);
         if (found == NULL)
         {
-            error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
+            error_exit(SEM_ERROR_UNDEF, "Variable not4 defined yet");
         }
         int tmp = old;
         old = found->type;
@@ -183,7 +183,7 @@ void statm(Tree *ast, SymTable *sym)
         SymTItem *found = stSearch(sym, ast->Lptr->value);
         if (found == NULL)
         {
-            error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
+            error_exit(SEM_ERROR_UNDEF, "Variable not5 defined yet");
         }
         int tmp = old;
         old = found->type;
@@ -273,7 +273,7 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
         return 1;
         break;
     }
-    value = value;
+    // value = value;
     return 0;
 }
 
@@ -293,11 +293,20 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun)
                 break;
             }
 
+            char help[10];
+            sprintf(help, "%d", type);
+            printf("s--- %s\n", help);
+            int i = 0;
             while (tmp != NULL)
             {
-                newSym(tmp->Rptr->value, type, value, sym);
+                newSym(tmp->Rptr->value, (help[i] - '0'), value, sym);
                 tmp = tmp->Lptr;
+                i++;
             }
+            // if (vartype != type)
+            // {
+            //     error_exit(SEM_ERROR_TYPE, "Type of variable is not coresponding with assignment");
+            // }
             break;
 
         case N_IDENT_INIT:;
@@ -311,11 +320,11 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun)
                 sItem = stSearch(sym, tmp->value);
                 if (sItem == NULL)
                 {
-                    error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
+                    error_exit(SEM_ERROR_UNDEF, "Variable not1 defined yet");
                 }
                 if (type1 != sItem->type)
                 {
-                    error_exit(SEM_ERROR_TYPE, "Type of variable is not equal to statement");
+                    error_exit(SEM_ERROR_TYPE, "Type of variable is not coresponding with assignment");
                 }
                 break;
             }
@@ -323,17 +332,34 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun)
             int vartype = 0;
             while (tmp != NULL)
             {
+                if (strcmp("_", tmp->Rptr->value)==0)
+                {
+                    tmp = tmp->Lptr;
+                    vartype = vartype * 10 + 4;
+                    continue;
+                }
+
                 sItem = stSearch(sym, tmp->Rptr->value);
                 if (sItem == NULL)
                 {
-                    error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
+                    error_exit(SEM_ERROR_UNDEF, "Variable not2 defined yet");
                 }
                 vartype = vartype * 10 + sItem->type;
                 tmp = tmp->Lptr;
             }
-            if (vartype != type1)
+            int thisDigit = 0;
+            int thatDigit = 0;
+            while (vartype != 0 || type1 != 0)
             {
-                error_exit(SEM_ERROR_TYPE, "Type of variable is not coresponding with assignment");
+                thatDigit = type1 % 10;
+                type1 = type1 / 10;
+                thisDigit = vartype % 10;
+                vartype = vartype / 10;
+                printf("type--%d, vartype--%d\n", thatDigit, thisDigit);
+                if ((thisDigit == 0 || thatDigit == 0) || (thisDigit != thatDigit && thisDigit != 4))
+                {
+                    error_exit(SEM_ERROR_TYPE, "Type of variable is not coresponding with assignment");
+                }
             }
             break;
 
@@ -346,7 +372,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun)
                     sItem = stSearch(sym, tmp->Rptr->value);
                     if (sItem == NULL)
                     {
-                        error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
+                        error_exit(SEM_ERROR_UNDEF, "Variable not3 defined yet");
                     }
                 }
                 tmp = tmp->Lptr;
