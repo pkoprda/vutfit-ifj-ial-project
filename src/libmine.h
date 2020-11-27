@@ -20,7 +20,7 @@
 #define MAX_LEN_KEYWORD 10
 #define LPTR 0
 #define RPTR 1
-#define FTsize 7
+#define FTsize 19
 #define STsize 11
 
 #define error_exit(ERROR, M)                                                   \
