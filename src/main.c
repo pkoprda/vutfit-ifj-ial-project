@@ -5,6 +5,7 @@ int main()
     lexer();
     parser();
     semantics();
-    generate();
+    generate_code();
+    fprintf(stdout, "EXIT 0");
     return 0;
 }

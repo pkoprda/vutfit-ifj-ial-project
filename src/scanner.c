@@ -104,7 +104,7 @@ int lexer()
                 }
                 else
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
 
@@ -164,7 +164,7 @@ int lexer()
                 }
                 else
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
 
@@ -186,7 +186,7 @@ int lexer()
             else
             {
                 debug_print("\n%c %d", c, c);
-                error_exit(LEX_ERROR, "Lexikalna chyba!");
+                error_exit(LEX_ERROR, "Lexical error!");
             }
 
             break;
@@ -229,7 +229,7 @@ int lexer()
 
                     if (feof(stdin))
                     {
-                        error_exit(LEX_ERROR, "Lexikalna chyba!");
+                        error_exit(LEX_ERROR, "Lexical error!");
                     }
                 }
             }
@@ -326,7 +326,7 @@ int lexer()
             {
                 if(firstDigit == '0')
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
                 addChar(buffer, c);
                 stav = STATE_NUMBER;
@@ -342,7 +342,7 @@ int lexer()
                 }
                 else
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
             else if (c == 'e' || c == 'E')
@@ -352,6 +352,7 @@ int lexer()
             else
             {
                 ungetc(c, stdin);
+                debug_print("INT: %s", buffer->str);
                 stackPush(&stack, initToken(TOKEN_INT, my_strdup(buffer->str)));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
@@ -362,19 +363,20 @@ int lexer()
             break;
 
         case STATE_FLOAT_NUMBER:
-
-            addChar(buffer, c);
             if (isdigit(c))
             {
+                addChar(buffer, c);
                 stav = STATE_FLOAT_NUMBER;
             }
             else if (c == 'e' || c == 'E')
             {
+                addChar(buffer, c);
                 stav = STATE_EXPONENT_NUMBER;
             }
             else
             {
                 ungetc(c, stdin);
+                debug_print("FLOAT: %s", buffer->str);
                 stackPush(&stack, initToken(TOKEN_FLOAT, my_strdup(buffer->str)));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
@@ -395,7 +397,7 @@ int lexer()
                 }
                 else
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
             else if (isdigit(c))
@@ -407,19 +409,20 @@ int lexer()
             {
                 clearBuffer(buffer);
                 freeBuffer(buffer);
-                error_exit(LEX_ERROR, "Lexikalna chyba!");
+                error_exit(LEX_ERROR, "Lexical error!");
             }
             break;
 
         case STATE_EXPONENT_NUMBER_FINAL:
-            addChar(buffer, c);
             if (isdigit(c))
             {
+                addChar(buffer, c);
                 stav = STATE_EXPONENT_NUMBER_FINAL;
             }
             else
             {
                 ungetc(c, stdin);
+                debug_print("FLOAT: %s", buffer->str);
                 stackPush(&stack, initToken(TOKEN_FLOAT, buffer->str));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
@@ -451,7 +454,7 @@ int lexer()
                 {
                     clearBuffer(buffer);
                     freeBuffer(buffer);
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
 
                 // escape sekvencie
@@ -485,21 +488,21 @@ int lexer()
                             {
                                 clearBuffer(buffer);
                                 freeBuffer(buffer);
-                                error_exit(LEX_ERROR, "Lexikalna chyba!");
+                                error_exit(LEX_ERROR, "Lexical error!");
                             }
                         }
                         else
                         {
                             clearBuffer(buffer);
                             freeBuffer(buffer);
-                            error_exit(LEX_ERROR, "Lexikalna chyba!");
+                            error_exit(LEX_ERROR, "Lexical error!");
                         }
                     }
                     else
                     {
                         clearBuffer(buffer);
                         freeBuffer(buffer);
-                        error_exit(LEX_ERROR, "Lexikalna chyba!");
+                        error_exit(LEX_ERROR, "Lexical error!");
                     }
                 }
 
@@ -512,7 +515,7 @@ int lexer()
             break;
 
         default:
-            error_exit(LEX_ERROR, "Lexikalna chyba!");
+            error_exit(LEX_ERROR, "Lexical error!");
         }
     }
 
