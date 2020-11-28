@@ -135,7 +135,8 @@ int hashCode(tKey key, int size)
 {
     int retval = 1;
     int keylen = strlen(key);
-    for (int i = 0; i<keylen; i++){
+    for (int i = 0; i < keylen; i++)
+    {
         retval += key[i];
     }
     return (retval % size);
@@ -143,24 +144,29 @@ int hashCode(tKey key, int size)
 
 void ftInit(FunTable *fun)
 {
-	for (int i = 0 ; i<FTsize; i++){
-		(*fun)[i] = NULL;
-	}
+    for (int i = 0; i < FTsize; i++)
+    {
+        (*fun)[i] = NULL;
+    }
 }
 
 void stInit(SymTable *sym)
 {
-	for (int i = 0 ; i<STsize; i++){
-		(*sym)[i] = NULL;
-	}
+    for (int i = 0; i < STsize; i++)
+    {
+        (*sym)[i] = NULL;
+    }
 }
 
 void newFun(FunTable *fun, tKey key, int retvar, int count, int types, SymTable *sym)
 {
     FunTItem *tmp = ftSearch(fun, key);
-    if (tmp != NULL){
+    if (tmp != NULL)
+    {
         error_exit(3, "Function is defined yet");
-    } else{
+    }
+    else
+    {
         FunTItem *new = malloc(sizeof(FunTItem));
         //if (new == NULL)
         //error_exit(99, "Failed to allocate memory");
@@ -179,21 +185,26 @@ FunTItem *ftSearch(FunTable *fun, tKey key)
 {
     int hash = hashCode(key, FTsize);
     FunTItem *tmp = (*fun)[hash];
-    while (tmp != NULL){
-        if (!strcmp(tmp->key, key)){
+    while (tmp != NULL)
+    {
+        if (!strcmp(tmp->key, key))
+        {
             return tmp;
         }
         tmp = tmp->next;
     }
-	return NULL;
+    return NULL;
 }
 
 void newSym(tKey key, int type, char *value, SymTable *sym)
 {
     SymTItem *tmp = stSearch(sym, key);
-    if (tmp != NULL){
+    if (tmp != NULL)
+    {
         error_exit(3, "Variable is defined yet");
-    } else{
+    }
+    else
+    {
         SymTItem *new = malloc(sizeof(SymTItem));
         //if (new == NULL)
         //error_exit(99, "Failed to allocate memory");
@@ -210,46 +221,68 @@ SymTItem *stSearch(SymTable *sym, tKey key)
 {
     int hash = hashCode(key, STsize);
     SymTItem *tmp = (*sym)[hash];
-    while (tmp != NULL){
-        if (!strcmp(tmp->key, key)){
+    while (tmp != NULL)
+    {
+        if (!strcmp(tmp->key, key))
+        {
             return tmp;
         }
         tmp = tmp->next;
     }
-	return NULL;
+    return NULL;
 }
 
-void convertString(char* val)
+void convertString(char *val)
 {
-    if (!val) return;
+    if (!val)
+        return;
 
     val++;
-    val[strlen(val)-1] = '\0';
+    val[strlen(val) - 1] = '\0';
 
     char *str = my_strdup(val);
-    char *escape =  "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x20\x23\x5c";
-
-    while(*str != '\0') 
+    for (int i = 0; str[i] != '\0'; i++)
     {
-        if (strchr(escape, *str)) 
+        if (str[i] == '\\')
         {
-            if (*str < 10) 
+            i++;
+
+            if (str[i] == 't')
             {
-                printf("\\00%d", *str);
-            } 
-            else if (*str > 100) 
-            {
-                printf("\\%d", *str);
-            } 
-            else 
-            {
-                printf("\\0%d", *str);
+                printf("\\009");
             }
-        } 
-        else 
-        {
-            printf("%c", *str);
+            else if (str[i] == 'n')
+            {
+                printf("\\010");
+            }
+            else if (str[i] == '"')
+            {
+                printf("\\034");
+            }
+            else if (str[i] == '\\')
+            {
+                printf("\\092");
+            }
+            else if (str[i] == 'x')
+            {
+                i++;
+                char hex[3] = {0};
+                hex[0] = str[i++];
+                hex[1] = str[i++];
+                printf("\\%03ld", strtol(hex, NULL, 16));
+            }
+            i += 2;
         }
-    str++;
-}
+        if (str[i] == ' ')
+        {
+            printf("\\032");
+            i++;
+        }
+        else if (str[i] == '#')
+        {
+            printf("\\035");
+            i++;
+        }
+        printf("%c", str[i]);
+    }
 }
