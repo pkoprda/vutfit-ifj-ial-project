@@ -1,15 +1,20 @@
-#include "code_gen.h"
+#include "libmine.h"
 
-#define PRINT_HEADER()         \
-    PRINT_CODE(".IFJcode20")    \
-    PRINT_NL()
-
-
+#define PRINT_CODE(M, ...)  \
+    fprintf(stdout, "" M "\n", ##__VA_ARGS__)
+    
+#define PRINT_CODE_WITHOUT_NL(M, ...)   \
+    fprintf(stdout, "" M "", ##__VA_ARGS__)
+    
+#define PRINT_NL() \
+    fprintf(stdout, "\n")
 
 void generate()
 {
     stdout_print("\n======================= GENERATING CODE =======================\n");
-    PRINT_HEADER();
+    //PRINT_HEADER();
+    PRINT_CODE(".IFJcode20");
+    PRINT_NL();
     generate_label(ast->Rptr);
 }
 
@@ -61,8 +66,23 @@ void generate_function(Tree *ast)
             break;
         
         case N_IDENT_INIT:
-            generate_var_init(ast->Rptr->Lptr);
-            generate_expr(ast->Rptr->Rptr);
+
+            //2 pripady:
+            //1. ast->Rptr->Lptr->type == N_IDENTIFIER
+            if(ast->Rptr->Lptr->type != SEQ)
+            {
+                generate_var_init(ast->Rptr->Lptr);
+                generate_expr(ast->Rptr->Rptr);
+            }
+            //2. ast->Rptr->Lptr->type == SEQ
+            else
+            {
+                // ast->Rptr: "="
+                generate_var_init(ast->Rptr);
+                generate_expr(ast->Rptr->Rptr);
+            }
+
+
             PRINT_NL();
             break;
 
@@ -104,12 +124,12 @@ void generate_var_def(Tree *ast)
 
 void generate_var_init(Tree *ast)
 {
-    PRINT_CODE_WITHOUT_NL("MOVE LF@%%%s ", ast->Rptr->value);
+    PRINT_CODE_WITHOUT_NL("MOVE LF@%%%s ", ast->value);   
 }
 
 void generate_expr(Tree *ast)
 {
-    stdout_print("HERE Type: %d Value: %s", ast->Rptr->type, ast->Rptr->value);
+    debug_print("Type: %d | Value: %s", ast->type, ast->value);
 
     switch(ast->Rptr->type)
     {
@@ -117,18 +137,21 @@ void generate_expr(Tree *ast)
         case N_MINUS:
         case N_MULL:
         case N_DIV:
+            break;
 
+        case SEQ:
             break;
 
         default:
             break;
     }
     
-    // if(!ast->Lptr)
-    // {
-    //     return;
-    // }
-    // generate_expr(ast->Lptr);
+    if(!ast->Lptr)
+    {
+        return;
+    }
+    //debug_print("Type: %d | Value: %s", ast->Lptr->type, ast->Lptr->value);
+    generate_expr(ast->Lptr);
 }
 
 void generate_print(Tree *ast)

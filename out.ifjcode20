@@ -1,0 +1,17 @@
+type--2, vartype--2
+type--1, vartype--1
+.IFJcode20
+
+LABEL $$main
+CREATEFRAME
+PUSHFRAME
+DEFVAR LF@%a
+MOVE LF@%a int@5
+DEFVAR LF@%b
+MOVE LF@%b int@3
+DEFVAR LF@%c
+MOVE LF@%c string@Hey
+MOVE LF@%(null) 
+POPFRAME
+EXIT int@0
+

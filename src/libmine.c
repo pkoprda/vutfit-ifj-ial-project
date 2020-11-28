@@ -68,6 +68,10 @@ TokenPtr getToken(Stack *s)
 
 void expectToken(int type)
 {
+    if (stackEmpty(&stack))
+    {
+        error_exit(SYNTAX_ERROR, "Syntax error");
+    }
     if (!(getToken(&stack)->type == type))
     {
         error_exit(SYNTAX_ERROR, "Syntax error");

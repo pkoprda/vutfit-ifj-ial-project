@@ -366,6 +366,10 @@ Tree *stmt()
 
         /*for_expr*/
         for_expr = createNode(SEQ, NULL, expr(0));
+        if (for_expr->Rptr == NULL)
+        {
+            error_exit(SYNTAX_ERROR, "For has not expr.")
+        }
         expectToken(TOKEN_SEMICOLON);
 
         /*id_init*/
@@ -395,6 +399,10 @@ Tree *stmt()
     case KEYWORD_IF:
 
         condition = createNode(SEQ, NULL, expr(0));
+        if (condition->Rptr == NULL)
+        {
+            error_exit(SYNTAX_ERROR, "If has no condition.")
+        }
         expectToken(TOKEN_CURLY_LBRACKET);
         expectToken(TOKEN_EOL);
         if_cont = stmt();
@@ -408,6 +416,16 @@ Tree *stmt()
         help = createNode(N_IF, condition, createNode(N_ELSE, els_cont, if_cont));
         root = createNode(SEQ, stmt(), help);
         break;
+    case FUNC_INPUTS:
+    case FUNC_INPUTF:
+    case FUNC_INPUTI:
+    case FUNC_INT2FLOAT:
+    case FUNC_FLOAT2INT:
+    case FUNC_LEN:
+    case FUNC_SUBSTR:
+    case FUNC_ORD:
+    case FUNC_CHR:
+        error_exit(SEM_ERROR_PARAMS, "Funkcie musia byt priradene premennej");
     case TOKEN_EOL:
         return stmt();
     default:
@@ -427,10 +445,18 @@ Tree *stmt2(char *name)
     /*:=*/
     case IDENTIF_DEF:
         root = createNode(N_IDENT_DEF, createLeaf(N_IDENTIFIER, identificator->value), expr(0));
+        if (root->Rptr == NULL)
+        {
+            error_exit(SYNTAX_ERROR, "Right side of EXPR is empty.")
+        }
         break;
     /* = */
     case IDENTIF_INIT:
         root = createNode(N_IDENT_INIT, createLeaf(N_IDENTIFIER, identificator->value), expr(0));
+        if (root->Rptr == NULL)
+        {
+            error_exit(SYNTAX_ERROR, "Right side of EXPR is empty.")
+        }
         break;
     case TOKEN_ROUND_LBRACKET:
         help = arg_coma();
@@ -448,6 +474,10 @@ Tree *stmt2(char *name)
         else
         {
             error_exit(SYNTAX_ERROR, "Syntax error!");
+        }
+        if (root->Rptr == NULL)
+        {
+            error_exit(SYNTAX_ERROR, "Right side of EXPR is empty.")
         }
         break;
     }
@@ -565,10 +595,43 @@ Tree *terms2()
 Tree *expr(int precedence)
 {
     TokenPtr t = NULL;
+    TokenPtr tmp = NULL;
     Tree *root = NULL;
     Tree *help = NULL;
     char *name = NULL;
     bool ungetT = false;
+
+
+    // Check for invalid negative number: var:= -4
+    if (tok->type == IDENTIF_DEF || tok->type == IDENTIF_INIT)
+    {
+        tmp = getToken(&stack);
+        if (tmp->type == TOKEN_MINUS)
+        {
+            tmp = getToken(&stack);
+            if (tmp->type == TOKEN_INT || tmp->type == TOKEN_FLOAT)
+            {
+                tmp = getToken(&stack);
+                if (tmp->type == TOKEN_EOL)
+                {
+                    error_exit(SYNTAX_ERROR, "var := -4 is invalid")
+                }
+                else
+                {
+                    ungetToken(&stack);
+                }
+            }
+            else
+            {
+                ungetToken(&stack);
+            }
+        }
+        else
+        {
+            ungetToken(&stack);
+        }
+    }
+
     tok = getToken(&stack);
     switch (tok->type)
     {
@@ -606,8 +669,8 @@ Tree *expr(int precedence)
             tok->value = buff;
         }
         ungetToken(&stack);*/
-        root = expr(precedence);
-        break;
+        //root = expr(precedence);
+        //break;
     case TOKEN_PLUS:
     case TOKEN_MUL:
     case TOKEN_DIV:
@@ -643,11 +706,12 @@ Tree *expr(int precedence)
         {
             root->value = t->value;
         }
-        else if(t->type == TOKEN_INT || t->type == TOKEN_FLOAT)
+        else if (t->type == TOKEN_INT || t->type == TOKEN_FLOAT)
         {
             error_exit(SEM_ERROR_PARAMS, "LEN takes only STRING.");
-            
-        } else {
+        }
+        else
+        {
             error_exit(SYNTAX_ERROR, "SYNTAX ERROR!");
         }
         expectToken(TOKEN_ROUND_RBRACKET);
@@ -660,11 +724,12 @@ Tree *expr(int precedence)
         {
             root->value = t->value;
         }
-        else if(t->type == TOKEN_STRING || t->type == TOKEN_FLOAT)
+        else if (t->type == TOKEN_STRING || t->type == TOKEN_FLOAT)
         {
             error_exit(SEM_ERROR_PARAMS, "CHR takes only INT.");
-            
-        } else {
+        }
+        else
+        {
             error_exit(SYNTAX_ERROR, "SYNTAX ERROR!");
         }
         expectToken(TOKEN_ROUND_RBRACKET);
@@ -678,11 +743,12 @@ Tree *expr(int precedence)
         {
             root->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
-        else if(t->type == TOKEN_INT || t->type == TOKEN_FLOAT)
+        else if (t->type == TOKEN_INT || t->type == TOKEN_FLOAT)
         {
             error_exit(SEM_ERROR_PARAMS, "ORD takes only string as a first argument.");
-            
-        } else {
+        }
+        else
+        {
             error_exit(SYNTAX_ERROR, "SYNTAX ERROR!");
         }
 
@@ -693,10 +759,12 @@ Tree *expr(int precedence)
         {
             root->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
-        else if(t->type == TOKEN_STRING || t->type == TOKEN_FLOAT)
+        else if (t->type == TOKEN_STRING || t->type == TOKEN_FLOAT)
         {
             error_exit(SEM_ERROR_PARAMS, "ORD takes only INT as a second argument.");
-        } else {
+        }
+        else
+        {
             error_exit(SYNTAX_ERROR, "SYNTAX ERROR!");
         }
         expectToken(TOKEN_ROUND_RBRACKET);
@@ -709,10 +777,12 @@ Tree *expr(int precedence)
         {
             root->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
-        else if(t->type == TOKEN_INT || t->type == TOKEN_FLOAT)
+        else if (t->type == TOKEN_INT || t->type == TOKEN_FLOAT)
         {
             error_exit(SEM_ERROR_PARAMS, "SUBSTR takes only STRING as a first argument.");
-        } else {
+        }
+        else
+        {
             error_exit(SYNTAX_ERROR, "SYNTAX ERROR!");
         }
         expectToken(TOKEN_COMMA);
@@ -721,9 +791,12 @@ Tree *expr(int precedence)
         {
             root->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
-        else if(t->type == TOKEN_STRING || t->type == TOKEN_FLOAT){
+        else if (t->type == TOKEN_STRING || t->type == TOKEN_FLOAT)
+        {
             error_exit(SEM_ERROR_PARAMS, "SUBSTR takes only INT as a second argument.");
-        } else {
+        }
+        else
+        {
             error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
 
@@ -733,16 +806,93 @@ Tree *expr(int precedence)
         {
             root->Lptr->Lptr->Lptr = createNode(SEQ, NULL, createLeaf(table[t->type].node, t->value));
         }
-        else if(t->type == TOKEN_STRING || t->type == TOKEN_FLOAT)
+        else if (t->type == TOKEN_STRING || t->type == TOKEN_FLOAT)
         {
             error_exit(SEM_ERROR_PARAMS, "SUBSTR takes only INT as a third argument.");
-        } else {
+        }
+        else
+        {
             error_exit(SYNTAX_ERROR, "SYNTAX ERROR!")
         }
         expectToken(TOKEN_ROUND_RBRACKET);
         break;
+    case FUNC_INT2FLOAT:
+        root = createLeaf(table[tok->type].node, NULL);
+        expectToken(TOKEN_ROUND_LBRACKET);
+        t = getToken(&stack);
+        if (t->type == TOKEN_INT || t->type == TOKEN_IDENTIF)
+        {
+            root->value = t->value;
+        }
+        else if (t->type == TOKEN_STRING || t->type == TOKEN_FLOAT)
+        {
+            error_exit(SEM_ERROR_PARAMS, "CHR takes only INT.");
+        }
+        else
+        {
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!");
+        }
+        expectToken(TOKEN_ROUND_RBRACKET);
+        break;
+    case FUNC_FLOAT2INT:
+        root = createLeaf(table[tok->type].node, NULL);
+        expectToken(TOKEN_ROUND_LBRACKET);
+        t = getToken(&stack);
+        if (t->type == TOKEN_FLOAT || t->type == TOKEN_IDENTIF)
+        {
+            root->value = t->value;
+        }
+        else if (t->type == TOKEN_STRING || t->type == TOKEN_INT)
+        {
+            error_exit(SEM_ERROR_PARAMS, "CHR takes only INT.");
+        }
+        else
+        {
+            error_exit(SYNTAX_ERROR, "SYNTAX ERROR!");
+        }
+        expectToken(TOKEN_ROUND_RBRACKET);
+        break;
+
     default:
         ungetToken(&stack);
+    }
+
+    // Check if two operators go after each other.
+    if (ungetT)
+    {
+        switch (tok->type)
+        {
+        case TOKEN_PLUS:
+        case TOKEN_MUL:
+        case TOKEN_DIV:
+        case TOKEN_LESS:
+        case TOKEN_LESS_EQUAL:
+        case TOKEN_GREATER:
+        case TOKEN_GREATER_EQUAL:
+        case TOKEN_EQUAL:
+        case TOKEN_NOT_EQUAL:
+        case TOKEN_MINUS:
+            tmp = getToken(&stack);
+            switch (tmp->type)
+            {
+            case TOKEN_PLUS:
+            case TOKEN_MUL:
+            case TOKEN_DIV:
+            case TOKEN_LESS:
+            case TOKEN_LESS_EQUAL:
+            case TOKEN_GREATER:
+            case TOKEN_GREATER_EQUAL:
+            case TOKEN_EQUAL:
+            case TOKEN_NOT_EQUAL:
+            case TOKEN_MINUS:
+                error_exit(SYNTAX_ERROR, "Two operatorts cannot go after each other.");
+            default:
+                ungetToken(&stack);
+                break;
+            }
+        default:
+            break;
+        }
     }
 
     while (tok && table[tok->type].precedence >= precedence)
