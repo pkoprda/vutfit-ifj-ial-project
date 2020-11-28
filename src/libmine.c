@@ -271,17 +271,17 @@ void convertString(char *val)
                 hex[1] = str[i++];
                 printf("\\%03ld", strtol(hex, NULL, 16));
             }
-            i += 2;
+            continue;           
         }
         if (str[i] == ' ')
         {
             printf("\\032");
-            i++;
+            continue;
         }
         else if (str[i] == '#')
         {
             printf("\\035");
-            i++;
+            continue;
         }
         printf("%c", str[i]);
     }

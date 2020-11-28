@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra
 
 SOURCE = src/*.c
-BIN = bin/main
+BIN = bin/ifj20
 ZIP = xkoprd00.zip
 
 all: $(BIN)
@@ -21,4 +21,4 @@ zip:
 	zip -j $(ZIP) src/* Makefile
 
 clean:
-	rm bin/main
+	rm bin/ifj20

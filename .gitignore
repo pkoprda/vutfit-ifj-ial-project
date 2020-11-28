@@ -54,5 +54,5 @@ dkms.conf
 # VSCode
 .vscode/
 
-bin/main
+bin/ifj20
 tests/mojtest.go

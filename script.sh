@@ -47,7 +47,7 @@ then
         name=${n::-3}
 
         # scanner
-        ( bin/main <tests/scanner/"${name}".go ) >/dev/null
+        ( bin/ifj20 <tests/scanner/"${name}".go ) >/dev/null
         RC=$?
         if [ "${RC}" = "$(cat tests/scanner/"${name}".rc)" ]
         then
@@ -67,7 +67,7 @@ then
         ((COUNT_ALL+=1))
         name=${n::-3}
 
-        ( bin/main <tests/parser/"${name}".go ) >/dev/null
+        ( bin/ifj20 <tests/parser/"${name}".go ) >/dev/null
         RC=$?
         if [ "${RC}" = "$(cat tests/parser/"${name}".rc)" ]
         then
@@ -87,7 +87,7 @@ then
         ((COUNT_ALL+=1))
         name=${n::-3}
 
-        ( bin/main <tests/sem/"${name}".go ) >/dev/null
+        ( bin/ifj20 <tests/sem/"${name}".go ) >/dev/null
         RC=$?
         if [ "${RC}" = "$(cat tests/sem/"${name}".rc)" ]
         then
@@ -107,7 +107,7 @@ then
         ((COUNT_ALL+=1))
         name=${n::-3}
 
-        ( bin/main <tests/exe/"${name}".go ) >/dev/null
+        ( bin/ifj20 <tests/exe/"${name}".go ) >/dev/null
         RC=$?
         if [ "${RC}" = "$(cat tests/exe/"${name}".rc)" ]
         then

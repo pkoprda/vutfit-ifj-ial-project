@@ -295,7 +295,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun)
 
             char help[10];
             sprintf(help, "%d", type);
-            printf("s--- %s\n", help);
+            stdout_print("s--- %s\n", help);
             int i = 0;
             while (tmp != NULL)
             {
@@ -355,7 +355,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun)
                 type1 = type1 / 10;
                 thisDigit = vartype % 10;
                 vartype = vartype / 10;
-                printf("type--%d, vartype--%d\n", thatDigit, thisDigit);
+                stdout_print("type--%d, vartype--%d\n", thatDigit, thisDigit);
                 if ((thisDigit == 0 || thatDigit == 0) || (thisDigit != thatDigit && thisDigit != 4))
                 {
                     error_exit(SEM_ERROR_TYPE, "Type of variable is not coresponding with assignment");
