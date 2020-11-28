@@ -61,8 +61,9 @@ void generate_function(Tree *ast)
             break;
         
         case N_IDENT_INIT:
-            stdout_print("HERE Type: %d Value: %s", ast->Rptr->type, ast->Rptr->value);
             generate_var_init(ast->Rptr->Lptr);
+            generate_expr(ast->Rptr->Rptr);
+            PRINT_NL();
             break;
 
         case N_PRINT:
@@ -104,7 +105,30 @@ void generate_var_def(Tree *ast)
 void generate_var_init(Tree *ast)
 {
     PRINT_CODE_WITHOUT_NL("MOVE LF@%%%s ", ast->Rptr->value);
-    PRINT_NL();
+}
+
+void generate_expr(Tree *ast)
+{
+    stdout_print("HERE Type: %d Value: %s", ast->Rptr->type, ast->Rptr->value);
+
+    switch(ast->Rptr->type)
+    {
+        case N_PLUS:
+        case N_MINUS:
+        case N_MULL:
+        case N_DIV:
+
+            break;
+
+        default:
+            break;
+    }
+    
+    // if(!ast->Lptr)
+    // {
+    //     return;
+    // }
+    // generate_expr(ast->Lptr);
 }
 
 void generate_print(Tree *ast)
