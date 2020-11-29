@@ -18,10 +18,6 @@
 #define LINE_BUFF_LEN 128
 #define MIN_LEN_KEYWORD 2
 #define MAX_LEN_KEYWORD 10
-#define LPTR 0
-#define RPTR 1
-#define FTsize 19
-#define STsize 11
 
 #define error_exit(ERROR, M)                                                   \
     fprintf(stderr, "[ERROR:%d] (%s:%d): " M "\n", ERROR, __FILE__, __LINE__); \
@@ -178,30 +174,6 @@ typedef struct
     unsigned int allocSize;
 } string;
 
-typedef char* tKey;
-
-typedef struct SymTItem
-{
-    tKey key;
-    int type;
-    char *value;
-    struct SymTItem *next;
-} SymTItem;
-
-typedef SymTItem *SymTable[STsize];
-
-typedef struct FunTItem
-{
-    tKey key;
-    int types;          // func example(int a, double b) (int, string) = 1312
-    int retvar;         // number of return values
-    int count;          // number of return values + params
-    SymTable *sym;
-    struct FunTItem *next;
-} FunTItem;
-
-typedef FunTItem *FunTable[FTsize];
-
 void initStack(Stack *s);
 void *stackTop(Stack *s);
 void stackPop(Stack *s);
@@ -251,14 +223,6 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir);
 void Print_tree(Tree *TempTree);
 
 int semantics();
-void ftInit(FunTable *fun);
-void stInit(SymTable *sym);
-int hashCode(tKey key, int size);
-void newFun(FunTable *fun, tKey key, int retvar, int count, int types, SymTable *sym);
-void newSym(tKey key, int type, char *value, SymTable *sym);
-FunTItem *ftSearch(FunTable *fun, tKey key);
-SymTItem *stSearch(SymTable *sym, tKey key);
-
 
 extern Stack stack;
 extern Tree *ast;
