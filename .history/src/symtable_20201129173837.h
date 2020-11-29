@@ -1,12 +1,12 @@
 /*
- * IAL - hashtable
+ * IAL - hastable
  * Header file for symtable.c 
  * Creator: Viliam Holik - xholik14
  */
 
 #include "libmine.h"
 
-// size of hashtable for funcions and symbols
+// size of hastable for funcions and symbols
 #define FTsize 19
 #define STsize 11
 
@@ -20,20 +20,20 @@ typedef struct SymTItem
     struct SymTItem *next;
 } SymTItem;
 
-// hashtable for symbols
+// hastable for symbols
 typedef SymTItem *SymTable[STsize];
 
 typedef struct FunTItem
-{ // item in hashtable of functions
+{ // item in hastable of functions
     tKey key;
     int types;     // func example(int a, double b) (int, string) = 1312
     int retvar;    // number of return values
     int count;     // number of return values + params
-    SymTable *sym; // ptr to hashtable of symbols
+    SymTable *sym; // ptr to hastable of symbols
     struct FunTItem *next;
 } FunTItem;
 
-// hashtable for functions
+// hastable for functions
 typedef FunTItem *FunTable[FTsize];
 
 void ftInit(FunTable *fun);
