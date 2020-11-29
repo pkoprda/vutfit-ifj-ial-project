@@ -1,11 +1,11 @@
 /*
- * IAL - hashtable
+ * IAL - hastable
  * Creator: Viliam Holik - xholik14
  */
 
 #include "symtable.h"
 
-// function for scatter items in hashtable
+// function for scatter items in hastable
 int hashCode(tKey key, int size)
 {
     int retval = 1;
@@ -17,7 +17,7 @@ int hashCode(tKey key, int size)
     return (retval % size);
 }
 
-// initialization of hashtable for functions
+// initialization of hastable for functions
 void ftInit(FunTable *fun)
 {
     // each item in hashtable -> NULL
@@ -27,7 +27,7 @@ void ftInit(FunTable *fun)
     }
 }
 
-// initialization of hashtable for symbols
+// initialization of hastable for symbols
 void stInit(SymTable *sym)
 {
     // each item in hashtable -> NULL
@@ -37,7 +37,7 @@ void stInit(SymTable *sym)
     }
 }
 
-// insert new function in hashtable of functions
+// insert new function in hastable of functions
 void newFun(FunTable *fun, tKey key, int retvar, int count, int types, SymTable *sym)
 {
     // is there already item with same key?
@@ -63,7 +63,7 @@ void newFun(FunTable *fun, tKey key, int retvar, int count, int types, SymTable 
     (*fun)[hash] = new;
 }
 
-// search for function in hashtable of functions
+// search for function in hastable of functions
 FunTItem *ftSearch(FunTable *fun, tKey key)
 {
     int hash = hashCode(key, FTsize);
@@ -79,7 +79,7 @@ FunTItem *ftSearch(FunTable *fun, tKey key)
     return NULL;
 }
 
-// insert new symbol in hashtable of symbols
+// insert new symbol in hastable of symbols
 void newSym(tKey key, int type, char *value, SymTable *sym)
 {
     // is there already item with same key?
@@ -103,7 +103,7 @@ void newSym(tKey key, int type, char *value, SymTable *sym)
     (*sym)[hash] = new;
 }
 
-// search for symbol in hashtable of symbols
+// search for symbol in hastable of symbols
 SymTItem *stSearch(SymTable *sym, tKey key)
 {
     int hash = hashCode(key, STsize);
