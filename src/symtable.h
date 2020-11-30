@@ -17,6 +17,10 @@ typedef struct SymTItem
     tKey key;
     int type; // int(1) string(2) double(3)
     char *value;
+    int hide;
+    int forcnt;
+    int ifcnt;
+    struct SymTItem *down;
     struct SymTItem *next;
 } SymTItem;
 
@@ -40,6 +44,7 @@ void ftInit(FunTable *fun);
 void stInit(SymTable *sym);
 int hashCode(tKey key, int size);
 void newFun(FunTable *fun, tKey key, int retvar, int count, int types, SymTable *sym);
-void newSym(tKey key, int type, char *value, SymTable *sym);
+void newSym(tKey key, int type, char *value, int hide, int forcnt, int ifcnt, SymTable *sym);
 FunTItem *ftSearch(FunTable *fun, tKey key);
 SymTItem *stSearch(SymTable *sym, tKey key);
+SymTItem *searchdown(SymTItem *sym, int hide, int forcnt, int ifcnt);

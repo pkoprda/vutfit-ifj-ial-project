@@ -80,14 +80,18 @@ FunTItem *ftSearch(FunTable *fun, tKey key)
 }
 
 // insert new symbol in hashtable of symbols
-void newSym(tKey key, int type, char *value, SymTable *sym)
+void newSym(tKey key, int type, char *value, int hide, int forcnt, int ifcnt, SymTable *sym)
 {
     // is there already item with same key?
     SymTItem *tmp = stSearch(sym, key);
     // if yes ERROR
     if (tmp != NULL)
     {
-        error_exit(3, "Variable has been already defined");
+        SymTItem *tmp2 = searchdown(tmp, hide, forcnt, ifcnt);
+        if (tmp2 != NULL)
+        {
+            error_exit(3, "Variable has been already defined");
+        }
     }
 
     SymTItem *new = malloc(sizeof(SymTItem));
@@ -98,9 +102,28 @@ void newSym(tKey key, int type, char *value, SymTable *sym)
     new->key = key;
     new->type = type;
     new->value = value;
-    int hash = hashCode(key, STsize);
-    new->next = (*sym)[hash];
-    (*sym)[hash] = new;
+    new->hide = hide;
+    new->ifcnt = ifcnt;
+    new->forcnt = forcnt;
+    if (tmp == NULL)
+    {
+        int hash = hashCode(key, STsize);
+        new->down = NULL;
+        new->next = (*sym)[hash];
+        (*sym)[hash] = new;
+        return;
+    }
+    // must go down in sItem
+    do
+    {
+        if (tmp->down == NULL)
+        {
+            break;
+        }
+        tmp = tmp->down;
+    } while (tmp != NULL);
+    tmp->down = new;
+    new->next = NULL;
 }
 
 // search for symbol in hashtable of symbols
@@ -115,6 +138,21 @@ SymTItem *stSearch(SymTable *sym, tKey key)
             return tmp;
         }
         tmp = tmp->next;
+    }
+    return NULL;
+}
+
+// search items in scopes
+SymTItem *searchdown(SymTItem *sym, int hide, int forcnt, int ifcnt)
+{
+    SymTItem *tmp = sym;
+    while (tmp != NULL)
+    {
+        if (tmp->forcnt == forcnt && tmp->ifcnt == ifcnt && tmp->hide == hide)
+        {
+            return tmp;
+        }
+        tmp = tmp->down;
     }
     return NULL;
 }

@@ -1,6 +1,9 @@
 #include "symtable.h"
 
 int old = 0;
+int ifcnt = 0;
+int forcnt = 0;
+int hide = 0;
 
 void printhashtable(FunTable *fun)
 {
@@ -85,15 +88,15 @@ int getTypes(Tree *ast, int retvar, int count, SymTable *sym)
         }
         else if (tmp1->Rptr->type == N_PARAM_IDENT_STR)
         {
-            tmp = 3;
+            tmp = 2;
         }
         else if (tmp1->Rptr->type == N_PARAM_IDENT_FLOAT)
         {
-            tmp = 2;
+            tmp = 3;
         }
 
         types = types * 10 + tmp;
-        newSym(tmp1->Rptr->value, tmp1->Rptr->type - 4, NULL, sym);
+        newSym(tmp1->Rptr->value, tmp1->Rptr->type - 4, NULL, hide, forcnt, ifcnt, sym);
         tmp1 = tmp1->Lptr;
         i++;
         count--;
@@ -107,11 +110,11 @@ int getTypes(Tree *ast, int retvar, int count, SymTable *sym)
         }
         else if (tmp2->Rptr->type == RETURN_TYPE_STR)
         {
-            tmp = 3;
+            tmp = 2;
         }
         else if (tmp2->Rptr->type == RETURN_TYPE_FLOAT)
         {
-            tmp = 2;
+            tmp = 3;
         }
 
         types = types * 10 + tmp;
@@ -196,6 +199,9 @@ void statm(Tree *ast, SymTable *sym)
 
 int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
 {
+    if (ast == NULL){
+        return 0;
+    }
     switch (ast->type)
     {
     case N_LIT_INT:
@@ -224,19 +230,31 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
             int half = getIDtype(tmp->Rptr, value, sym, fun);
             endtype = endtype * 10 + half;
             tmp = tmp->Lptr;
+            printf("seq--%d\n", endtype);
         }
         return endtype;
         break;
 
     case N_FUNC:;
-        FunTItem *fItem = ftSearch(fun, ast->value);
+        FunTItem *fItem = ftSearch(fun, ast->value);       
         if (fItem == NULL)
         {
             error_exit(SEM_ERROR_UNDEF, "Func not defined yet");
         }
+        int params = fItem->types;
         int all = fItem->types;
         int retval = fItem->retvar;
+        int parval = retval;
+        printf("parval--%d\n", parval);
         int kons = 1;
+        while (parval != 0){
+            params = params / 10;
+            parval--;
+        }
+        printf("params--%d\n",params);
+        if (params != getIDtype(ast->Lptr, value, sym, fun)){
+            error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+        }
         while (retval != 0)
         {
             kons *= 10;
@@ -272,6 +290,13 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
     case N_FLOAT2INT:
         return 1;
         break;
+    case N_IDENTIFIER:;
+        SymTItem *Sitem = stSearch(sym, ast->value);
+        if (Sitem == NULL){
+            error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
+        }
+        return Sitem->type;
+        break;
     }
     // value = value;
     return 0;
@@ -289,7 +314,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             Tree *tmp = ast->Rptr->Lptr;
             if (tmp->type != SEQ)
             {
-                newSym(tmp->value, type, value, sym);
+                newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym);
                 break;
             }
 
@@ -299,7 +324,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             int i = 0;
             while (tmp != NULL)
             {
-                newSym(tmp->Rptr->value, (help[i] - '0'), value, sym);
+                newSym(tmp->Rptr->value, (help[i] - '0'), value, hide, forcnt, ifcnt, sym);
                 tmp = tmp->Lptr;
                 i++;
             }
@@ -318,6 +343,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             if (tmp->type != SEQ)
             {
                 sItem = stSearch(sym, tmp->value);
+                sItem = searchdown(sItem, hide, forcnt, ifcnt);
                 if (sItem == NULL)
                 {
                     error_exit(SEM_ERROR_UNDEF, "Variable not1 defined yet");
@@ -363,7 +389,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             }
             break;
 
-        case N_PRINT:
+        case N_PRINT:;
             tmp = ast->Rptr->Lptr;
             while (tmp != SEQ)
             {
@@ -379,12 +405,13 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             }
             break;
         
-        case N_RETURN:
-            tmp = ast->Lptr;
+        case N_RETURN:;
             value = NULL;
-            type = getIDtype(tmp,value,sym,fun);
+            int type2 = getIDtype(ast->Rptr->Lptr,value,sym,fun);
+            printf("typ--%d\n", type2);
             FunTItem* Fitem = ftSearch(fun, fname);
             int returnvalue = Fitem->types; 
+            printf("rettyp--%d\n", returnvalue);
             int retvar = Fitem->retvar;
             int kons = 1;
 
@@ -394,20 +421,56 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                 retvar--;
             }
 
-            returnvalue = returnvalue - (returnvalue/kons) * kons ;
-            if (returnvalue != type)
+            returnvalue = returnvalue - (returnvalue/kons) * kons;
+            printf("rettyp--%d\n", returnvalue);
+            if (returnvalue != type2)
             {
                 error_exit(SEM_ERROR_PARAMS, "Return type not correspoding with function definition");
             }
             break;
+
+        case N_FOR:;
+            forcnt++;
+            hide++;
+            tmp = ast->Lptr;
+            fname = NULL;
+            if (tmp->Rptr != NULL && tmp->Rptr->type == N_IDENT_DEF)
+            {
+                value = NULL;
+                type = getIDtype(tmp->Rptr->Rptr, value, sym, fun);
+                tmp = ast->Rptr->Lptr;
+                newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym);
+            }
+            tmp = ast->Lptr->Lptr;
+            if (getIDtype(tmp->Rptr->Lptr, value, sym, fun) != getIDtype(tmp->Rptr->Rptr, value, sym, fun))
+            {
+                error_exit(SEM_ERROR_TYPE, "Operation with different data types");
+            }
+            tmp = tmp->Lptr;
+            if (tmp->Rptr != NULL && tmp->Rptr->type == N_IDENT_INIT)
+            {
+                InFuncGo(tmp, sym, fun, fname);
+            }
+            tmp = ast->Rptr;
+            InFuncGo(tmp, sym, fun, fname);
+            hide--;
+            break;
+
+        case N_IF:;
+            ifcnt++;
+            hide++;
+            tmp = ast->Lptr;
+            value = NULL;
+            if (getIDtype(tmp->Rptr->Lptr, value, sym, fun) != getIDtype(tmp->Rptr->Rptr, value, sym, fun))
+            {
+                error_exit(SEM_ERROR_TYPE, "Operation with different data types");
+            }
+            tmp = tmp->Rptr;
+            InFuncGo(tmp->Lptr, sym, fun, fname);
+            InFuncGo(tmp->Rptr, sym, fun, fname);
+            hide--;
+            break;
         }    
-
-            
-
-
-
-
-
     }
 
     if (ast->Lptr != NULL)
@@ -428,6 +491,9 @@ void FUN_def(Tree *ast, FunTable *fun)
     }
     else
     {
+        if (ast->Lptr == NULL){
+            return;
+        }
         int retvar = cnt(ast->Lptr, -1);
         int count = cnt(ast->Lptr, retvar);
         newFun(fun, name, retvar, count, 0, sym);
@@ -435,8 +501,10 @@ void FUN_def(Tree *ast, FunTable *fun)
         int types = getTypes(ast->Lptr, retvar, count, sym);
         fItem->types = types;
     }
-
-    InFuncGo(ast->Rptr, sym, fun, name);
+    if (ast->Rptr != NULL)
+    {
+        InFuncGo(ast->Rptr, sym, fun, name);
+    }
 }
 
 void FuncLookup(Tree *ast, FunTable *fun)
