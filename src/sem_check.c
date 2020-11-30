@@ -277,7 +277,7 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
     return 0;
 }
 
-void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun)
+void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
 {
     if (ast->type == SEQ)
     {
@@ -378,12 +378,41 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun)
                 tmp = tmp->Lptr;
             }
             break;
-        }
+        
+        case N_RETURN:
+            tmp = ast->Lptr;
+            value = NULL;
+            type = getIDtype(tmp,value,sym,fun);
+            FunTItem* Fitem = ftSearch(fun, fname);
+            int returnvalue = Fitem->types; 
+            int retvar = Fitem->retvar;
+            int kons = 1;
+
+            while (retvar != 0)
+            {
+                kons *= 10;
+                retvar--;
+            }
+
+            returnvalue = returnvalue - (returnvalue/kons) * kons ;
+            if (returnvalue != type)
+            {
+                error_exit(SEM_ERROR_PARAMS, "Return type not correspoding with function definition");
+            }
+            break;
+        }    
+
+            
+
+
+
+
+
     }
 
     if (ast->Lptr != NULL)
     {
-        InFuncGo(ast->Lptr, sym, fun);
+        InFuncGo(ast->Lptr, sym, fun, fname);
     }
 }
 
@@ -407,7 +436,7 @@ void FUN_def(Tree *ast, FunTable *fun)
         fItem->types = types;
     }
 
-    InFuncGo(ast->Rptr, sym, fun);
+    InFuncGo(ast->Rptr, sym, fun, name);
 }
 
 void FuncLookup(Tree *ast, FunTable *fun)
