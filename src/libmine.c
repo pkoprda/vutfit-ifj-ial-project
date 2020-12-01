@@ -20,7 +20,7 @@ string *initBuffer()
     string *buffer = (string *)calloc(LINE_BUFF_LEN, LINE_BUFF_LEN * sizeof(char));
     if (!buffer)
     {
-        error_exit(INTERNAL_ERROR, "Chyba alokacie pamäti!");
+        error_exit(INTERNAL_ERROR, "Allocation error!");
     }
     return buffer;
 }
@@ -42,7 +42,7 @@ TokenPtr initToken(int type, char *value)
     TokenPtr token = malloc(sizeof(struct tToken));
     if (!token)
     {
-        error_exit(INTERNAL_ERROR, "Chyba alokacie pamäti!");
+        error_exit(INTERNAL_ERROR, "Allocation error!");
     }
     token->type = type;
     token->value = value;
@@ -107,7 +107,7 @@ void initString(string *s)
     s->str = (char *)malloc(sizeof(char) * SIZE_STRING_INC);
     if (!s->str)
     {
-        error_exit(INTERNAL_ERROR, "Chyba alokacie pameti!");
+        error_exit(INTERNAL_ERROR, "Allocation error!");
     }
     s->str[0] = '\0';
     s->length = 0;
@@ -121,7 +121,7 @@ string *addChar(string *s, char c)
         s->str = (char *)realloc(s->str, s->length + SIZE_STRING_INC);
         if (!s->str)
         {
-            error_exit(INTERNAL_ERROR, "Chyba alokacie pameti!");
+            error_exit(INTERNAL_ERROR, "Allocation error!");
         }
         s->allocSize = s->length + SIZE_STRING_INC;
     }

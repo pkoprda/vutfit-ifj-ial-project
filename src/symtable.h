@@ -1,7 +1,7 @@
 /*
  * IAL - hashtable
  * Header file for symtable.c 
- * Creator: Viliam Holik - xholik14
+ * Creators: Viliam Holik - xholik14, Pavol Babjak - xbabja03
  */
 
 #include "libmine.h"

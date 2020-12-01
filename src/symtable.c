@@ -1,6 +1,6 @@
 /*
  * IAL - hashtable
- * Creator: Viliam Holik - xholik14
+ * Creator: Viliam Holik - xholik14, Pavol Babjak - xbabja03
  */
 
 #include "symtable.h"
@@ -45,13 +45,13 @@ void newFun(FunTable *fun, tKey key, int retvar, int count, int types, SymTable 
     // if yes ERROR
     if (tmp != NULL)
     {
-        error_exit(3, "Function has been already defined");
+        error_exit(SEM_ERROR_UNDEF, "Function has been already defined");
     }
 
     FunTItem *new = malloc(sizeof(FunTItem));
     if (new == NULL)
     {
-        error_exit(99, "Failed to allocate memory");
+        error_exit(INTERNAL_ERROR, "Failed to allocate memory");
     }
     new->key = key;
     new->count = count;
@@ -84,7 +84,7 @@ void newSym(tKey key, int type, char *value, int hide, int forcnt, int ifcnt, Sy
 {
     if (ftSearch(fun, key) != NULL)
     {
-        error_exit(3, "Variable has been already defined");
+        error_exit(SEM_ERROR_UNDEF, "Variable has been already defined");
     }
     // is there already item with same key?
     SymTItem *tmp = stSearch(sym, key);
@@ -94,14 +94,14 @@ void newSym(tKey key, int type, char *value, int hide, int forcnt, int ifcnt, Sy
         SymTItem *tmp2 = searchdown(tmp, hide, forcnt, ifcnt);
         if (tmp2 != NULL)
         {
-            error_exit(3, "Variable has been already defined");
+            error_exit(SEM_ERROR_UNDEF, "Variable has been already defined");
         }
     }
 
     SymTItem *new = malloc(sizeof(SymTItem));
     if (new == NULL)
     {
-        error_exit(99, "Failed to allocate memory");
+        error_exit(INTERNAL_ERROR, "Failed to allocate memory");
     }
     new->key = key;
     new->type = type;
