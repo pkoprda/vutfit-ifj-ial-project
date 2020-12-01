@@ -171,7 +171,7 @@ Tree *program()
         expectToken(TOKEN_EOL);
         if (parameters != NULL || returntypes != NULL)
             params_returntypes = createNode(N_PARAMS_RETURNTYPES, parameters, returntypes);
-           
+
         func = createNode(N_DEF_FUNC, params_returntypes, stmt());
         func->value = func_name;
         expectToken(TOKEN_CURLY_RBRACKET);
@@ -601,7 +601,6 @@ Tree *expr(int precedence)
     char *name = NULL;
     bool ungetT = false;
 
-
     // Check for invalid negative number: var:= -4
     if (tok->type == IDENTIF_DEF || tok->type == IDENTIF_INIT)
     {
@@ -671,6 +670,8 @@ Tree *expr(int precedence)
         ungetToken(&stack);*/
         //root = expr(precedence);
         //break;
+    case FUNC_PRINT:
+        error_exit(6, "Print cannot be in expression");
     case TOKEN_PLUS:
     case TOKEN_MUL:
     case TOKEN_DIV:
@@ -948,7 +949,6 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
         {
             suf2 = strcat(suf2, "   ");
         }
-            
 
         Print_tree2(TempTree->Rptr, suf2, 'R');
         if (TempTree->value)
@@ -959,7 +959,6 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
         {
             stdout_print("%s  +-[ (%d) %s ]\n", sufix, TempTree->type, displayNode[TempTree->type]);
         }
-            
 
         strcpy(suf2, sufix);
 
@@ -974,7 +973,6 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
         {
             stdout_print("%s\n", suf2);
         }
-            
 
         free(suf2);
     }
@@ -994,7 +992,6 @@ void Print_tree(Tree *TempTree)
     {
         stdout_print("Strom je prazdny...\n");
     }
-        
 
     stdout_print("\n");
     stdout_print("===========================================\n");
