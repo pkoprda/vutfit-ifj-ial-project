@@ -656,6 +656,8 @@ Tree *expr(int precedence)
         tok = getToken(&stack);
         ungetT = true;
         break;
+    case FUNC_PRINT:
+        error_exit(6, "Print cannot be in expression");
     case TOKEN_MINUS:
         //tok = getToken(&stack);
         /* Pridanie "-" pred hodnotu */
@@ -670,8 +672,7 @@ Tree *expr(int precedence)
         ungetToken(&stack);*/
         //root = expr(precedence);
         //break;
-    case FUNC_PRINT:
-        error_exit(6, "Print cannot be in expression");
+
     case TOKEN_PLUS:
     case TOKEN_MUL:
     case TOKEN_DIV:
