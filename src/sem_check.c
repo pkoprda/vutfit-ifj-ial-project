@@ -76,7 +76,7 @@ int cnt(Tree *ast, int i)
     return i;
 }
 
-int getTypes(Tree *ast, int retvar, int count, SymTable *sym, FunTable *fun)
+int getTypes(Tree *ast, int retvar, int count, SymTable *sym)
 {
     Tree *tmp1 = ast->Lptr;
     Tree *tmp2 = ast->Rptr;
@@ -100,7 +100,7 @@ int getTypes(Tree *ast, int retvar, int count, SymTable *sym, FunTable *fun)
         }
 
         types = types * 10 + tmp;
-        newSym(tmp1->Rptr->value, tmp1->Rptr->type - 4, NULL, hide, forcnt, ifcnt, sym, fun);
+        newSym(tmp1->Rptr->value, tmp1->Rptr->type - 4, NULL, hide, forcnt, ifcnt, sym);
         tmp1 = tmp1->Lptr;
         i++;
         count--;
@@ -239,6 +239,10 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
         break;
 
     case N_FUNC:;
+        if (stSearch(sym, ast->value) != NULL)
+        {
+            error_exit(SEM_ERROR_UNDEF, "Func same name as variable");
+        }
         FunTItem *fItem = ftSearch(fun, ast->value);
         if (fItem == NULL)
         {
@@ -346,7 +350,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             Tree *tmp = ast->Rptr->Lptr;
             if (tmp->type != SEQ)
             {
-                newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym, fun);
+                newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym);
                 break;
             }
 
@@ -361,7 +365,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                     i++;
                     continue;
                 }
-                newSym(tmp->Rptr->value, (help[i] - '0'), value, hide, forcnt, ifcnt, sym, fun);
+                newSym(tmp->Rptr->value, (help[i] - '0'), value, hide, forcnt, ifcnt, sym);
                 tmp = tmp->Lptr;
                 i++;
             }
@@ -381,7 +385,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                     sItem = searchdown(sItem, hide, forcnt, ifcnt);
                     if (sItem == NULL)
                     {
-                        newSym(tmp->value, getIDtype(ast->Rptr->Rptr, value1, sym, fun), value1, hide, forcnt, ifcnt, sym, fun);
+                        newSym(tmp->value, getIDtype(ast->Rptr->Rptr, value1, sym, fun), value1, hide, forcnt, ifcnt, sym);
                         break;
                     }
                 }
@@ -426,6 +430,30 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                 {
                     error_exit(SEM_ERROR_TYPE, "Type of variable is not coresponding with assignment");
                 }
+            }
+            break;
+
+        case N_FUNC:;
+            if (stSearch(sym, ast->Rptr->value) != NULL)
+            {
+                error_exit(SEM_ERROR_UNDEF, "Func same name as variable");
+            }
+            // printf("pea\n");
+            FunTItem *fItem = ftSearch(fun, ast->Rptr->value);
+            if (fItem == NULL)
+            {
+                error_exit(SEM_ERROR_UNDEF, "Func not defined yet");
+            }
+            // printf("pea\n");
+            if (fItem->retvar != 0)
+            {
+                error_exit(SEM_ERROR_PARAMS, "Must be assigned to a variable");
+            }
+            value = NULL;
+            // printf("pea\n");
+            if (fItem->types != getIDtype(ast->Rptr->Lptr, value, sym, fun))
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
             }
             break;
 
@@ -476,7 +504,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                 value = NULL;
                 type = getIDtype(tmp->Rptr->Rptr, value, sym, fun);
                 tmp = tmp->Rptr->Lptr;
-                newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym, fun);
+                newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym);
             }
             tmp = ast->Rptr->Lptr->Lptr;
             if (getIDtype(tmp->Rptr->Lptr, value, sym, fun) != getIDtype(tmp->Rptr->Rptr, value, sym, fun))
@@ -552,7 +580,7 @@ void FUN_def(Tree *ast, FunTable *fun)
         int count = cnt(ast->Lptr, retvar);
         newFun(fun, name, retvar, count, 0, sym);
         FunTItem *fItem = ftSearch(fun, name);
-        int types = getTypes(ast->Lptr, retvar, count, sym, fun);
+        int types = getTypes(ast->Lptr, retvar, count, sym);
         fItem->types = types;
     }
     if (ast->Rptr != NULL)

@@ -80,12 +80,8 @@ FunTItem *ftSearch(FunTable *fun, tKey key)
 }
 
 // insert new symbol in hashtable of symbols
-void newSym(tKey key, int type, char *value, int hide, int forcnt, int ifcnt, SymTable *sym, FunTable *fun)
+void newSym(tKey key, int type, char *value, int hide, int forcnt, int ifcnt, SymTable *sym)
 {
-    if (ftSearch(fun, key) != NULL)
-    {
-        error_exit(SEM_ERROR_UNDEF, "Variable has been already defined");
-    }
     // is there already item with same key?
     SymTItem *tmp = stSearch(sym, key);
     // if yes ERROR
