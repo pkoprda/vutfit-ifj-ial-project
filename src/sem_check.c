@@ -129,15 +129,25 @@ int getTypes(Tree *ast, int retvar, int count, SymTable *sym)
     return types;
 }
 
+void underscorecheck(Tree *ast)
+{
+    if (strcmp(ast->value, "_")==0)
+    {
+        error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+    }
+}
+
+
 void statm(Tree *ast, SymTable *sym)
 {
+    //printf("value %s \n" , ast->Rptr->value);
     if (ast->Rptr->type >= N_PLUS && ast->Rptr->type <= N_DIV)
     {
         if (ast->Rptr->type == N_DIV)
         {
-            if (ast->Rptr->Rptr->type == N_LIT_INT)
+            if (ast->Rptr->type == N_LIT_INT)
             {
-                if (strcmp(ast->Rptr->Rptr->value, "0") == 0)
+                if (strcmp(ast->Rptr->value, "0") == 0)
                 {
                     error_exit(DIVISION_ZERO_ERROR, "Division by 0");
                 }
@@ -306,12 +316,38 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
         {
             error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
         }
+        underscorecheck(ast);
         return 1;
         break;
-    case N_SUBSTR:
+    case N_SUBSTR:;
+        tmp = ast->Lptr;
+        while (tmp != NULL)
+        {
+            if (tmp->Rptr->type == N_IDENTIFIER)
+            {
+                if (strcmp(tmp->Rptr->value, "_")==0)
+                {
+                    error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+                }
+
+            }
+            tmp = tmp->Lptr;
+        }
         return 21;
         break;
     case N_ORD:
+        tmp = ast->Lptr;
+        while (tmp != NULL)
+        {
+            if (tmp->Rptr->type == N_IDENTIFIER)
+            {
+                if (strcmp(tmp->Rptr->value, "_")==0)
+                {
+                    error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+                }
+            }
+            tmp = tmp->Lptr;
+        }
         return 11;
         break;
     case N_CHR:
@@ -326,6 +362,7 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
         {
             error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
         }
+        underscorecheck(ast);
         return 3;
         break;
     case N_FLOAT2INT:
@@ -333,6 +370,7 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
         {
             error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
         }
+        underscorecheck(ast);
         return 1;
         break;
     case N_IDENTIFIER:;
@@ -419,11 +457,12 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                         break;
                     }
                 }
-                if (sItem == NULL)
+                //printf("string %s \n", tmp->value);
+                if ((strcmp(tmp->value, "_") != 0 ) && sItem == NULL)
                 {
                     error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
                 }
-                if (type1 != sItem->type)
+                if ((strcmp(tmp->value, "_") != 0 ) && (type1 != sItem->type))
                 {
                     error_exit(SEM_ERROR_PARAMS, "Type of variable is not coresponding with assignment");
                 }
