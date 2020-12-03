@@ -338,6 +338,26 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
     return 0;
 }
 
+void compare(Tree *ast)
+{
+    switch (ast->type)
+    {
+    case N_GREATER:
+    case N_LESS:
+    case N_EQ_GREATER:
+    case N_EQ_LESS:
+    case N_EQUAL:
+    case N_NOT_EQUAL:
+        return;
+        break;
+    
+    default:
+        error_exit(SEM_ERROR_TYPE, "No comparison");
+        return;
+        break;
+    }
+}
+
 void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
 {
     if (ast->type == SEQ)
@@ -507,6 +527,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                 newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym);
             }
             tmp = ast->Rptr->Lptr->Lptr;
+            compare(tmp->Rptr);
             if (getIDtype(tmp->Rptr->Lptr, value, sym, fun) != getIDtype(tmp->Rptr->Rptr, value, sym, fun))
             {
                 error_exit(SEM_ERROR_TYPE, "Operation with different data types");
@@ -531,6 +552,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             hide++;
             tmp = ast->Rptr->Lptr;
             value = NULL;
+            compare(tmp->Rptr);
             if ((getIDtype(tmp->Rptr->Lptr, value, sym, fun)) != (getIDtype(tmp->Rptr->Rptr, value, sym, fun)))
             {
                 error_exit(SEM_ERROR_TYPE, "Operation with different data types");
