@@ -456,9 +456,13 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                 type1 = type1 / 10;
                 thisDigit = vartype % 10;
                 vartype = vartype / 10;
-                if ((thisDigit == 0 || thatDigit == 0) || (thisDigit != thatDigit && thisDigit != 4))
+                if (thisDigit == 0 || thatDigit == 0)
                 {
-                    error_exit(SEM_ERROR_OTHERS, "Type of variable is not coresponding with assignment");
+                    error_exit(SEM_ERROR_OTHERS, "Number of assignment is not correct");
+                }
+                if (thisDigit != thatDigit && thisDigit != 4)
+                {
+                    error_exit(SEM_ERROR_TYPE, "Type of variable is not coresponding with assignment");
                 }
             }
             break;
