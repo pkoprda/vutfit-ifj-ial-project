@@ -347,7 +347,39 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
             }
             tmp = tmp->Lptr;
         }
-
+        if (ast->Lptr->Rptr->type == N_IDENTIFIER)
+        {
+            if (stSearch(sym, ast->Lptr->Rptr->value) == NULL && (ast->Lptr->Rptr->value)[0]!='\"')
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+            if((stSearch(sym, ast->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Rptr->value)->type != 2))
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+        }
+        if (ast->Lptr->Lptr->Rptr->type == N_IDENTIFIER)
+        {
+            if (stSearch(sym, ast->Lptr->Lptr->Rptr->value) == NULL)
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+            if ((stSearch(sym, ast->Lptr->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Lptr->Rptr->value)->type != 1))
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+        }
+        if (ast->Lptr->Lptr->Lptr->Rptr->type == N_IDENTIFIER)
+        {
+            if (stSearch(sym, ast->Lptr->Lptr->Lptr->Rptr->value) == NULL)
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+            if ((stSearch(sym, ast->Lptr->Lptr->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Lptr->Lptr->Rptr->value)->type != 1))
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+        }
         
         return 21;
         break;
@@ -363,6 +395,28 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
                 }
             }
             tmp = tmp->Lptr;
+        }
+        if (ast->Lptr->Rptr->type == N_IDENTIFIER)
+        {
+            if (stSearch(sym, ast->Lptr->Rptr->value) == NULL && (ast->Lptr->Rptr->value)[0]!='\"')
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+            if((stSearch(sym, ast->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Rptr->value)->type != 2))
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+        }
+        if (ast->Lptr->Lptr->Rptr->type == N_IDENTIFIER)
+        {
+            if (stSearch(sym, ast->Lptr->Lptr->Rptr->value) == NULL)
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
+            if ((stSearch(sym, ast->Lptr->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Lptr->Rptr->value)->type != 1))
+            {
+                error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
+            }
         }
         return 11;
         break;
