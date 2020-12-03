@@ -6,6 +6,7 @@ int old = 0;
 int ifcnt = 0;
 int forcnt = 0;
 int hide = 0;
+char *newvalue = NULL;
 
 /*
 void printhashtable(FunTable *fun)
@@ -137,105 +138,162 @@ void underscorecheck(Tree *ast)
     }
 }
 
-void statm(Tree *ast, SymTable *sym)
+void stcheck(int type)
 {
-    //printf("value %s \n" , ast->Rptr->value);
-    if (ast->Rptr->type >= N_PLUS && ast->Rptr->type <= N_DIV)
+    if (old == 0)
     {
-        if (ast->Rptr->type == N_DIV)
-        {
-            if (ast->Rptr->type == N_LIT_INT)
-            {
-                if (strcmp(ast->Rptr->value, "0") == 0)
-                {
-                    error_exit(DIVISION_ZERO_ERROR, "Division by 0");
-                }
-            }
-        }
-        statm(ast->Rptr, sym);
+        old = type;
     }
-
-    if (ast->Lptr->type >= N_PLUS && ast->Lptr->type <= N_DIV)
+    else
     {
-        if (ast->Lptr->type == N_DIV)
-        {
-            if (ast->Lptr->Rptr->type == N_LIT_INT)
-            {
-                if (strcmp(ast->Lptr->Rptr->value, "0") == 0)
-                {
-                    error_exit(DIVISION_ZERO_ERROR, "Division by 0");
-                }
-            }
-        }
-        statm(ast->Lptr, sym);
-    }
-
-    if (ast->Rptr->type >= N_LIT_INT && ast->Rptr->type <= N_LIT_STRING)
-    {
-        int tmp = old;
-        old = (ast->Rptr->type) - 7;
-        if (tmp != old && tmp != 0)
-        {
-            error_exit(SEM_ERROR_TYPE, "Operation with different data types");
-        }
-    }
-
-    if (ast->Lptr->type >= N_LIT_INT && ast->Lptr->type <= N_LIT_STRING)
-    {
-        int tmp = old;
-        old = (ast->Lptr->type - 7);
-        if (tmp != old && tmp != 0)
-        {
-            error_exit(SEM_ERROR_TYPE, "Operation with different data types");
-        }
-    }
-    if (ast->Rptr->type == N_IDENTIFIER)
-    {
-        // toto som dorobil aby prechadzal test underscore_usage_3.go
-        if (strcmp(ast->Lptr->value, "_") == 0)
-        {
-            old = 0;
-            return;
-        }
-
-        SymTItem *found = stSearch(sym, ast->Rptr->value);
-        if (found == NULL )
-        {
-            error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
-        }
-        int tmp = old;
-        old = found->type;
-        if (tmp != old && tmp != 0)
-        {
-            error_exit(SEM_ERROR_TYPE, "Operation with different data types");
-        }
-    }
-
-    if (ast->Lptr->type == N_IDENTIFIER)
-    {
-        // toto som dorobil aby prechadzal test underscore_usage_3.go
-        if (strcmp(ast->Lptr->value, "_") == 0)
-        {
-            old = 0;
-            return;
-        }
-
-        SymTItem *found = stSearch(sym, ast->Lptr->value);
-        if (found == NULL )
-        {
-            error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
-        }
-        int tmp = old;
-        old = found->type;
-        if (tmp != old && tmp != 0)
+        if (old != type)
         {
             error_exit(SEM_ERROR_TYPE, "Operation with different data types");
         }
     }
 }
 
+void statm(Tree *ast, SymTable *sym)
+{
+    if (ast == NULL)
+    {
+        return;
+    }
+    
+    SymTItem *sItem = NULL;
 
-int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
+    // divide by 0
+    if (ast->type == N_DIV)
+    {
+        if (ast->Rptr->type == N_LIT_INT)
+        {
+            if (strcmp(ast->Rptr->value, "0") == 0)
+            {
+                error_exit(DIVISION_ZERO_ERROR, "Division by 0");
+            }
+        }
+        else if (ast->Rptr->type == N_IDENTIFIER)
+        {
+            sItem = stSearch(sym, ast->Rptr->value);
+            // printf("--%s\n", sItem->value);
+            if (sItem == NULL)
+            {
+                error_exit(SEM_ERROR_UNDEF, "Variable has not been already defined");
+            }
+            if (strcmp(sItem->value, "0") == 0 || strcmp(sItem->value, "0.0") == 0)
+            {
+                error_exit(DIVISION_ZERO_ERROR, "Division by 0");
+            }
+        }
+        else if (ast->Rptr->type == N_LIT_FLOAT)
+        {
+            if (strcmp(ast->Rptr->value, "0.0") == 0)
+            {
+                error_exit(DIVISION_ZERO_ERROR, "Division by 0");
+            }
+        }
+    }
+
+    if (ast->type >= N_PLUS && ast->type <= N_DIV)
+    {
+        if (ast->Rptr->type >= N_LIT_INT && ast->Rptr->type <= N_LIT_FLOAT)
+        {
+            stcheck(ast->Rptr->type - 7);
+        }
+        else if (ast->Rptr->type == N_IDENTIFIER)
+        {
+            sItem = stSearch(sym, ast->Rptr->value);
+            if (sItem == NULL)
+            {
+                error_exit(SEM_ERROR_UNDEF, "Variable has not been already defined");
+            }
+            stcheck(sItem->type);
+        }
+        else 
+        {
+            statm(ast->Rptr, sym);
+        }
+
+        if (ast->Lptr->type >= N_LIT_INT && ast->Lptr->type <= N_LIT_FLOAT)
+        {
+            stcheck(ast->Lptr->type - 7);
+        }
+        else if (ast->Lptr->type == N_IDENTIFIER)
+        {
+            sItem = stSearch(sym, ast->Lptr->value);
+            if (sItem == NULL)
+            {
+                error_exit(SEM_ERROR_UNDEF, "Variable has not been already defined");
+            }
+            stcheck(sItem->type);
+        }
+        else 
+        {
+            statm(ast->Lptr, sym);
+        }
+    }
+    else
+    {
+        error_exit(SEM_ERROR_TYPE, "Operation with different data types");
+    }
+    
+
+    // if (ast->Lptr->type >= N_PLUS && ast->Lptr->type < N_DIV)
+    // {
+        
+    // }
+
+    // if (ast->Rptr->type >= N_LIT_INT && ast->Rptr->type <= N_LIT_STRING)
+    // {
+    //     int tmp = old;
+    //     old = (ast->Rptr->type) - 7;
+    //     if (tmp != old && tmp != 0)
+    //     {
+    //         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
+    //     }
+    // }
+
+    // if (ast->Lptr->type >= N_LIT_INT && ast->Lptr->type <= N_LIT_STRING)
+    // {
+    //     int tmp = old;
+    //     old = (ast->Lptr->type - 7);
+    //     if (tmp != old && tmp != 0)
+    //     {
+    //         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
+    //     }
+    // }
+    // if (ast->Rptr->type == N_IDENTIFIER)
+    // {
+    //     SymTItem *found = stSearch(sym, ast->Rptr->value);
+    //     if (found == NULL)
+    //     {
+    //         error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
+    //     }
+    //     int tmp = old;
+    //     old = found->type;
+    //     if (tmp != old && tmp != 0)
+    //     {
+    //         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
+    //     }
+    // }
+
+    // if (ast->Lptr->type == N_IDENTIFIER)
+    // {
+    //     SymTItem *found = stSearch(sym, ast->Lptr->value);
+    //     if (found == NULL)
+    //     {
+    //         error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
+    //     }
+    //     int tmp = old;
+    //     old = found->type;
+    //     if (tmp != old && tmp != 0)
+    //     {
+    //         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
+    //     }
+    // }
+}
+
+int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
 {
     if (ast == NULL)
     {
@@ -246,7 +304,8 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
     case N_LIT_INT:
     case N_LIT_STRING:
     case N_LIT_FLOAT:;
-        value = ast->value;
+        newvalue = ast->value;
+        // printf("+++%s\n", value);
         return (ast->type - 7);
         break;
 
@@ -254,10 +313,9 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
     case N_PLUS:
     case N_MULL:
     case N_DIV:;
-        statm(ast, sym);
-        int type = old;
         old = 0;
-        return type;
+        statm(ast, sym);
+        return old;
         break;
 
     case SEQ:;
@@ -265,7 +323,7 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
         int endtype = 0;
         while (tmp != NULL)
         {
-            int half = getIDtype(tmp->Rptr, value, sym, fun);
+            int half = getIDtype(tmp->Rptr, sym, fun);
             endtype = endtype * 10 + half;
             tmp = tmp->Lptr;
         }
@@ -292,7 +350,7 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
             params = params / 10;
             parval--;
         }
-        if (params != getIDtype(ast->Lptr, value, sym, fun))
+        if (params != getIDtype(ast->Lptr, sym, fun))
         {
             error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
         }
@@ -452,7 +510,6 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
         return Sitem->type;
         break;
     }
-    // value = value;
     return 0;
 }
 
@@ -483,12 +540,13 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
         switch (ast->Rptr->type)
         {
         case N_IDENT_DEF:;
-            char *value = NULL;
-            int type = getIDtype(ast->Rptr->Rptr, value, sym, fun);
+            int type = getIDtype(ast->Rptr->Rptr, sym, fun);
             Tree *tmp = ast->Rptr->Lptr;
             if (tmp->type != SEQ)
             {
-                newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym);
+                // printf("///%s\n", newvalue);
+                newSym(tmp->value, type, newvalue, hide, forcnt, ifcnt, sym);
+                newvalue = NULL;
                 break;
             }
 
@@ -503,16 +561,16 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                     i++;
                     continue;
                 }
-                newSym(tmp->Rptr->value, (help[i] - '0'), value, hide, forcnt, ifcnt, sym);
+                newSym(tmp->Rptr->value, (help[i] - '0'), newvalue, hide, forcnt, ifcnt, sym);
+                newvalue = NULL;
                 tmp = tmp->Lptr;
                 i++;
             }
             break;
 
         case N_IDENT_INIT:;
-            char *value1 = NULL;
             tmp = ast->Rptr->Lptr;
-            int type1 = getIDtype(ast->Rptr->Rptr, value1, sym, fun);
+            int type1 = getIDtype(ast->Rptr->Rptr, sym, fun);
             SymTItem *sItem;
 
             if (tmp->type != SEQ)
@@ -523,7 +581,8 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                     sItem = searchdown(sItem, hide, forcnt, ifcnt);
                     if (sItem == NULL)
                     {
-                        newSym(tmp->value, getIDtype(ast->Rptr->Rptr, value1, sym, fun), value1, hide, forcnt, ifcnt, sym);
+                        newSym(tmp->value, getIDtype(ast->Rptr->Rptr, sym, fun), newvalue, hide, forcnt, ifcnt, sym);
+                        newvalue = NULL;
                         break;
                     }
                 }
@@ -592,9 +651,8 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             {
                 error_exit(SEM_ERROR_OTHERS, "Must be assigned to a variable");
             }
-            value = NULL;
             // printf("pea\n");
-            if (fItem->types != getIDtype(ast->Rptr->Lptr, value, sym, fun))
+            if (fItem->types != getIDtype(ast->Rptr->Lptr, sym, fun))
             {
                 error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
             }
@@ -617,8 +675,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             break;
 
         case N_RETURN:;
-            value = NULL;
-            int type2 = getIDtype(ast->Rptr->Lptr, value, sym, fun);
+            int type2 = getIDtype(ast->Rptr->Lptr, sym, fun);
             FunTItem *Fitem = ftSearch(fun, fname);
             int returnvalue = Fitem->types;
             int retvar = Fitem->retvar;
@@ -644,14 +701,14 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             fname = NULL;
             if (tmp->Rptr != NULL && tmp->Rptr->type == N_IDENT_DEF)
             {
-                value = NULL;
-                type = getIDtype(tmp->Rptr->Rptr, value, sym, fun);
+                type = getIDtype(tmp->Rptr->Rptr, sym, fun);
                 tmp = tmp->Rptr->Lptr;
-                newSym(tmp->value, type, value, hide, forcnt, ifcnt, sym);
+                newSym(tmp->value, type, newvalue, hide, forcnt, ifcnt, sym);
+                newvalue = NULL;
             }
             tmp = ast->Rptr->Lptr->Lptr;
             compare(tmp->Rptr);
-            if (getIDtype(tmp->Rptr->Lptr, value, sym, fun) != getIDtype(tmp->Rptr->Rptr, value, sym, fun))
+            if (getIDtype(tmp->Rptr->Lptr, sym, fun) != getIDtype(tmp->Rptr->Rptr, sym, fun))
             {
                 error_exit(SEM_ERROR_TYPE, "Operation with different data types");
             }
@@ -674,9 +731,8 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             ifcnt++;
             hide++;
             tmp = ast->Rptr->Lptr;
-            value = NULL;
             compare(tmp->Rptr);
-            if ((getIDtype(tmp->Rptr->Lptr, value, sym, fun)) != (getIDtype(tmp->Rptr->Rptr, value, sym, fun)))
+            if ((getIDtype(tmp->Rptr->Lptr, sym, fun)) != (getIDtype(tmp->Rptr->Rptr, sym, fun)))
             {
                 error_exit(SEM_ERROR_TYPE, "Operation with different data types");
             }
