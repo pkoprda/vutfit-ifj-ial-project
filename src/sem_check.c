@@ -191,8 +191,15 @@ void statm(Tree *ast, SymTable *sym)
     }
     if (ast->Rptr->type == N_IDENTIFIER)
     {
+        // toto som dorobil aby prechadzal test underscore_usage_3.go
+        if (strcmp(ast->Lptr->value, "_") == 0)
+        {
+            old = 0;
+            return;
+        }
+
         SymTItem *found = stSearch(sym, ast->Rptr->value);
-        if (found == NULL)
+        if (found == NULL )
         {
             error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
         }
@@ -206,8 +213,15 @@ void statm(Tree *ast, SymTable *sym)
 
     if (ast->Lptr->type == N_IDENTIFIER)
     {
+        // toto som dorobil aby prechadzal test underscore_usage_3.go
+        if (strcmp(ast->Lptr->value, "_") == 0)
+        {
+            old = 0;
+            return;
+        }
+
         SymTItem *found = stSearch(sym, ast->Lptr->value);
-        if (found == NULL)
+        if (found == NULL )
         {
             error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
         }
