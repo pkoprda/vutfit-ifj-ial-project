@@ -137,7 +137,6 @@ void underscorecheck(Tree *ast)
     }
 }
 
-
 void statm(Tree *ast, SymTable *sym)
 {
     //printf("value %s \n" , ast->Rptr->value);
@@ -220,6 +219,7 @@ void statm(Tree *ast, SymTable *sym)
         }
     }
 }
+
 
 int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
 {
@@ -311,8 +311,8 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
         }
         return 31;
         break;
-    case N_LEN:
-        if (stSearch(sym, ast->value) != NULL && stSearch(sym, ast->value)->type != 2)
+    case N_LEN:;
+        if ((stSearch(sym, ast->value) != NULL && stSearch(sym, ast->value)->type != 2) || (stSearch(sym, ast->value) == NULL && (ast->value)[0]!='\"'))
         {
             error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
         }
@@ -333,6 +333,8 @@ int getIDtype(Tree *ast, char *value, SymTable *sym, FunTable *fun)
             }
             tmp = tmp->Lptr;
         }
+
+        
         return 21;
         break;
     case N_ORD:
@@ -520,7 +522,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             // printf("pea\n");
             if (fItem->retvar != 0)
             {
-                error_exit(SEM_ERROR_PARAMS, "Must be assigned to a variable");
+                error_exit(SEM_ERROR_OTHERS, "Must be assigned to a variable");
             }
             value = NULL;
             // printf("pea\n");
