@@ -148,6 +148,16 @@ void statm(Tree *ast, SymTable *sym)
 
     if (ast->Lptr->type >= N_PLUS && ast->Lptr->type <= N_DIV)
     {
+        if (ast->Lptr->type == N_DIV)
+        {
+            if (ast->Lptr->Rptr->type == N_LIT_INT)
+            {
+                if (strcmp(ast->Lptr->Rptr->value, "0") == 0)
+                {
+                    error_exit(DIVISION_ZERO_ERROR, "Division by 0");
+                }
+            }
+        }
         statm(ast->Lptr, sym);
     }
 
