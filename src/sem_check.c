@@ -199,7 +199,7 @@ void statm(Tree *ast, SymTable *sym)
         // check string statment, it can be only with +
         if (ast->type != N_PLUS && (ast->Rptr->type == N_LIT_STRING || ast->Lptr->type == N_LIT_STRING))
         {
-            error_exit(SEM_ERROR_TYPE, "Cannot oparate with string");
+            error_exit(SEM_ERROR_TYPE, "Cannot operate with string");
         }
 
         if (ast->Rptr->type >= N_LIT_INT && ast->Rptr->type <= N_LIT_FLOAT)
@@ -208,6 +208,10 @@ void statm(Tree *ast, SymTable *sym)
         }
         else if (ast->Rptr->type == N_IDENTIFIER)
         {
+            if (strcmp(ast->Rptr->value, "_") ==0)
+            {
+                error_exit(SEM_ERROR_OTHERS, "Aritmetic operation with undescore as identifier");
+            }
             sItem = stSearch(sym, ast->Rptr->value);
             if (sItem == NULL)
             {
@@ -215,7 +219,7 @@ void statm(Tree *ast, SymTable *sym)
             }
             if (sItem->type == 2 && ast->type != N_PLUS)
             {
-                error_exit(SEM_ERROR_TYPE, "Cannot oparate with string");
+                error_exit(SEM_ERROR_TYPE, "Cannot operate with string");
             }
             stcheck(sItem->type);
         }
@@ -230,6 +234,10 @@ void statm(Tree *ast, SymTable *sym)
         }
         else if (ast->Lptr->type == N_IDENTIFIER)
         {
+            if (strcmp(ast->Lptr->value, "_") ==0)
+            {
+                error_exit(SEM_ERROR_OTHERS, "Aritmetic operation with undescore as identifier");
+            }
             sItem = stSearch(sym, ast->Lptr->value);
             if (sItem == NULL)
             {
@@ -237,7 +245,7 @@ void statm(Tree *ast, SymTable *sym)
             }
             if (sItem->type == 2 && ast->type != N_PLUS)
             {
-                error_exit(SEM_ERROR_TYPE, "Cannot oparate with string");
+                error_exit(SEM_ERROR_TYPE, "Cannot operate with string");
             }
             stcheck(sItem->type);
         }
