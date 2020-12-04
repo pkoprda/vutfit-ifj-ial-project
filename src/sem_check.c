@@ -469,6 +469,10 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
         return 1;
         break;
     case N_IDENTIFIER:;
+        if (strcmp(ast->value, "_") ==0)
+        {
+            error_exit(SEM_ERROR_OTHERS, "Undescore can not be as a identifier");
+         }
         SymTItem *Sitem = stSearch(sym, ast->value);
         if (Sitem == NULL)
         {
