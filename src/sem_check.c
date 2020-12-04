@@ -196,6 +196,12 @@ void statm(Tree *ast, SymTable *sym)
 
     if (ast->type >= N_PLUS && ast->type <= N_DIV)
     {
+        // check string statment, it can be only with +
+        if (ast->type != N_PLUS && (ast->Rptr->type == N_LIT_STRING || ast->Lptr->type == N_LIT_STRING))
+        {
+            error_exit(SEM_ERROR_TYPE, "Cannot oparate with string");
+        }
+
         if (ast->Rptr->type >= N_LIT_INT && ast->Rptr->type <= N_LIT_FLOAT)
         {
             stcheck(ast->Rptr->type - 7);
@@ -206,6 +212,10 @@ void statm(Tree *ast, SymTable *sym)
             if (sItem == NULL)
             {
                 error_exit(SEM_ERROR_UNDEF, "Variable has not been already defined");
+            }
+            if (sItem->type == 2 && ast->type != N_PLUS)
+            {
+                error_exit(SEM_ERROR_TYPE, "Cannot oparate with string");
             }
             stcheck(sItem->type);
         }
@@ -225,6 +235,10 @@ void statm(Tree *ast, SymTable *sym)
             {
                 error_exit(SEM_ERROR_UNDEF, "Variable has not been already defined");
             }
+            if (sItem->type == 2 && ast->type != N_PLUS)
+            {
+                error_exit(SEM_ERROR_TYPE, "Cannot oparate with string");
+            }
             stcheck(sItem->type);
         }
         else 
@@ -236,61 +250,6 @@ void statm(Tree *ast, SymTable *sym)
     {
         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
     }
-    
-
-    // if (ast->Lptr->type >= N_PLUS && ast->Lptr->type < N_DIV)
-    // {
-        
-    // }
-
-    // if (ast->Rptr->type >= N_LIT_INT && ast->Rptr->type <= N_LIT_STRING)
-    // {
-    //     int tmp = old;
-    //     old = (ast->Rptr->type) - 7;
-    //     if (tmp != old && tmp != 0)
-    //     {
-    //         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
-    //     }
-    // }
-
-    // if (ast->Lptr->type >= N_LIT_INT && ast->Lptr->type <= N_LIT_STRING)
-    // {
-    //     int tmp = old;
-    //     old = (ast->Lptr->type - 7);
-    //     if (tmp != old && tmp != 0)
-    //     {
-    //         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
-    //     }
-    // }
-    // if (ast->Rptr->type == N_IDENTIFIER)
-    // {
-    //     SymTItem *found = stSearch(sym, ast->Rptr->value);
-    //     if (found == NULL)
-    //     {
-    //         error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
-    //     }
-    //     int tmp = old;
-    //     old = found->type;
-    //     if (tmp != old && tmp != 0)
-    //     {
-    //         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
-    //     }
-    // }
-
-    // if (ast->Lptr->type == N_IDENTIFIER)
-    // {
-    //     SymTItem *found = stSearch(sym, ast->Lptr->value);
-    //     if (found == NULL)
-    //     {
-    //         error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
-    //     }
-    //     int tmp = old;
-    //     old = found->type;
-    //     if (tmp != old && tmp != 0)
-    //     {
-    //         error_exit(SEM_ERROR_TYPE, "Operation with different data types");
-    //     }
-    // }
 }
 
 int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
