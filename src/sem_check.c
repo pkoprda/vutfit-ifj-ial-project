@@ -707,14 +707,15 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             {
                 error_exit(SEM_ERROR_TYPE, "Operation with different data types");
             }
-            tmp = ast->Rptr;
-            if (tmp->Lptr != NULL)
-            {
-                InFuncGo(tmp->Lptr, sym, fun, fname);
-            }
+            tmp = ast->Rptr->Rptr;
             if (tmp->Rptr != NULL)
             {
                 InFuncGo(tmp->Rptr, sym, fun, fname);
+            }
+            if (tmp->Lptr != NULL)
+            {
+                ifcnt++;
+                InFuncGo(tmp->Lptr, sym, fun, fname);
             }
             hide--;
             break;
@@ -773,6 +774,10 @@ void FuncLookup(Tree *ast, FunTable *fun)
     {
         if (ast->Rptr->type == N_DEF_FUNC)
         {
+            ifcnt = 0;
+            forcnt = 0;
+            hide = 0;
+            newvalue = NULL;
             FUN_def(ast->Rptr, fun);
         }
         FuncLookup(ast, fun);
