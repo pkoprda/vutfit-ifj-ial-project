@@ -228,11 +228,3 @@ extern Stack stack;
 extern Tree *ast;
 
 void generate();
-void generate_label(Tree *ast);
-void generate_function(Tree *ast);
-void generate_var_def(Tree *ast);
-void generate_var_init(Tree *ast);
-void generate_multivar_init(Tree *vars, Tree *expr);
-void generate_constant(int type, char* value);
-void generate_expr(Tree *ast);
-void generate_print(Tree *ast);

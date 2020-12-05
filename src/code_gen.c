@@ -1,10 +1,5 @@
-#include "libmine.h"
+#include "code_gen.h"
 
-#define PRINT_CODE(M, ...)               \
-    fprintf(stdout, "" M "", ##__VA_ARGS__) 
-
-#define PRINT_NL() \
-    fprintf(stdout, "\n")
 
 void generate()
 {
@@ -63,8 +58,17 @@ void generate_function(Tree *ast)
         case N_IDENT_INIT:
             if (ast->Rptr->Lptr->type != SEQ)
             {
-                generate_var_init(ast->Rptr->Lptr);
-                generate_expr(ast->Rptr->Rptr);
+                if(ast->Rptr->Rptr->type != N_PLUS && ast->Rptr->Rptr->type != N_MINUS &&
+                   ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL){
+                    generate_var_init(ast->Rptr->Lptr);
+                    generate_expr(ast->Rptr->Rptr);
+                }
+                else{
+                    generate_expr(ast->Rptr->Rptr);
+                    PRINT_CODE("POPS LF@%%%s\n",ast->Rptr->Lptr->value);
+                    PRINT_CODE("CLEARS\n");
+                }
+                
             }
             else
             {
@@ -114,8 +118,9 @@ void generate_var_init(Tree *ast)
 
 void generate_multivar_init(Tree *vars, Tree *expr)
 {
-    PRINT_CODE("MOVE LF@%%%s ", vars->Rptr->value);
+    //PRINT_CODE("MOVE LF@%%%s ", vars->Rptr->value);
     generate_expr(expr);
+    PRINT_CODE("POPS %s\n", vars->Rptr->value);
     if(!vars->Lptr)
     {
         return;
@@ -125,6 +130,7 @@ void generate_multivar_init(Tree *vars, Tree *expr)
 
 void generate_expr(Tree *ast)
 {
+    //debug_print("Type: %d | Value:%s", ast->type, ast->value);
     switch (ast->type)
     {
         case N_LIT_INT:
@@ -135,9 +141,74 @@ void generate_expr(Tree *ast)
             break;
 
         case N_PLUS:
+            PRINT_CODE("PUSHS ");
+            generate_constant(ast->Rptr->type, ast->Rptr->value);
+            PRINT_NL();
+            if(ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
+               ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER)
+            {
+                break;
+            }
+            PRINT_CODE("PUSHS ");
+            generate_constant(ast->Lptr->type, ast->Lptr->value);
+            PRINT_NL();
+            PRINT_CODE("ADDS\n");
+            break;
+
         case N_MINUS:
+            PRINT_CODE("PUSHS ");
+            generate_constant(ast->Rptr->type, ast->Rptr->value);
+            PRINT_NL();
+            if(ast->Lptr && ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
+               ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER)
+            {
+                break;
+            }
+            PRINT_CODE("PUSHS ");
+            generate_constant(ast->Lptr->type, ast->Lptr->value);
+            PRINT_NL();
+            PRINT_CODE("SUBS\n");
+            break;
+
         case N_MULL:
+            PRINT_CODE("PUSHS ");
+            generate_constant(ast->Rptr->type, ast->Rptr->value);
+            PRINT_NL();
+            if(ast->Lptr && ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
+               ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER)
+            {
+                break;
+            }
+            PRINT_CODE("PUSHS ");
+            generate_constant(ast->Lptr->type, ast->Lptr->value);
+            PRINT_NL();
+            PRINT_CODE("MULS\n");
+            break;
+
         case N_DIV:
+            PRINT_CODE("PUSHS ");
+            generate_constant(ast->Rptr->type, ast->Rptr->value);
+            PRINT_NL();
+            if(ast->Lptr && ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
+               ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER)
+            {
+                break;
+            }
+            PRINT_CODE("PUSHS ");
+            generate_constant(ast->Lptr->type, ast->Lptr->value);
+            PRINT_NL();
+            PRINT_CODE("TYPE LF@%%%s", ast->Lptr->value);
+            PRINT_CODE("TYPE TF@%%tmp LF@%%%s\n", ast->Lptr->value);
+            PRINT_CODE("TYPE TF@%%tmp LF@%%%s\n", ast->Rptr->value);
+            
+            if(ast->Lptr->type == N_LIT_FLOAT && ast->Rptr->type == N_LIT_FLOAT)
+            {
+                PRINT_CODE("DIVS\n");
+            }
+            else
+            {
+                PRINT_CODE("IDIVS\n");
+            }
             break;
 
         case SEQ:
@@ -152,6 +223,10 @@ void generate_expr(Tree *ast)
             break;
     }
 
+    if(ast->Lptr && ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
+       ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER){
+           generate_expr(ast->Lptr);
+    }
 }
 
 void generate_constant(int type, char* value)
@@ -169,6 +244,10 @@ void generate_constant(int type, char* value)
 
         case N_LIT_FLOAT:
             PRINT_CODE("float@%a", strtod(value, NULL));
+            break;
+
+        case N_IDENTIFIER:
+            PRINT_CODE("LF@%%%s", value);
             break;
         
         default:
@@ -188,6 +267,12 @@ void generate_print(Tree *ast)
             generate_constant(ast->Rptr->type, ast->Rptr->value);
             PRINT_NL();
             break;
+
+        // TODO: lookup for the value in symtable
+        case N_IDENTIFIER:
+            PRINT_CODE("WRITE ");
+            generate_constant(ast->Rptr->type, ast->Rptr->value);
+            PRINT_NL();
 
         default:
             break;
