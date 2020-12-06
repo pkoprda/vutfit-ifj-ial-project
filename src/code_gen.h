@@ -14,3 +14,4 @@ void generate_multivar_init(Tree *vars, Tree *expr);
 void generate_constant(int type, char* value);
 void generate_expr(Tree *ast);
 void generate_print(Tree *ast);
+void generate_return(Tree *ast);

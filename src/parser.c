@@ -605,7 +605,26 @@ Tree *expr(int precedence)
     if (tok->type == IDENTIF_DEF || tok->type == IDENTIF_INIT)
     {
         tmp = getToken(&stack);
-        if (tmp->type == TOKEN_MINUS)
+        if (tmp->type == TOKEN_ROUND_LBRACKET)
+        {
+            tmp = getToken(&stack);
+            if (tmp->type == TOKEN_MINUS)
+            {
+                tmp = getToken(&stack);
+                if (tmp->type == TOKEN_INT || tmp->type == TOKEN_FLOAT)
+                {
+                    tmp = getToken(&stack);
+                    if (tmp->type == TOKEN_ROUND_RBRACKET)
+                    {
+                        error_exit(SYNTAX_ERROR, "var := (-number) is invalid");
+                    }
+                    ungetToken(&stack);
+                }
+                ungetToken(&stack);
+            }
+            ungetToken(&stack);
+        }
+        else if (tmp->type == TOKEN_MINUS)
         {
             tmp = getToken(&stack);
             if (tmp->type == TOKEN_INT || tmp->type == TOKEN_FLOAT)
@@ -613,7 +632,7 @@ Tree *expr(int precedence)
                 tmp = getToken(&stack);
                 if (tmp->type == TOKEN_EOL)
                 {
-                    error_exit(SYNTAX_ERROR, "var := -4 is invalid")
+                    error_exit(SYNTAX_ERROR, "var := -number is invalid")
                 }
                 else
                 {
@@ -625,10 +644,7 @@ Tree *expr(int precedence)
                 ungetToken(&stack);
             }
         }
-        else
-        {
-            ungetToken(&stack);
-        }
+        ungetToken(&stack);
     }
 
     tok = getToken(&stack);

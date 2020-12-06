@@ -6,6 +6,7 @@ void generate()
     stdout_print("\n======================= GENERATING CODE =======================\n");
     //PRINT_HEADER();
     PRINT_CODE(".IFJcode20\n");
+    PRINT_CODE("JUMP $$main\n");
     PRINT_NL();
     generate_label(ast->Rptr);
 }
@@ -16,7 +17,7 @@ void generate_label(Tree *ast)
     {
         if (strcmp(ast->Rptr->value, "main") == 0)
         {
-            PRINT_CODE("LABEL $$%s\n", ast->Rptr->value);
+            PRINT_CODE("LABEL $$main\n");
             PRINT_CODE("CREATEFRAME\n");
             PRINT_CODE("PUSHFRAME\n");
             if (ast->Rptr->Rptr)
@@ -30,13 +31,11 @@ void generate_label(Tree *ast)
         else
         {
             PRINT_CODE("\nLABEL $%s\n", ast->Rptr->value);
-            PRINT_CODE("CREATEFRAME\n");
             PRINT_CODE("PUSHFRAME\n");
             if (ast->Rptr->Rptr)
             {
                 generate_function(ast->Rptr->Rptr);
             }
-            PRINT_CODE("POPFRAME\n");
             PRINT_NL();
         }
     }
@@ -78,7 +77,19 @@ void generate_function(Tree *ast)
             break;
 
         case N_PRINT:
-            generate_print(ast->Rptr->Lptr);
+            if(ast->Rptr->Lptr)
+            {
+                generate_print(ast->Rptr->Lptr);
+            }
+            break;
+
+        case N_RETURN:
+            if(ast->Rptr->Lptr)
+            {
+                generate_return(ast->Rptr->Lptr);
+            }
+            PRINT_CODE("POPFRAME\n");
+            PRINT_CODE("RETURN\n");
             break;
 
         default:
@@ -101,12 +112,16 @@ void generate_var_def(Tree *ast)
         case N_LIT_INT:
         case N_LIT_STRING:
         case N_LIT_FLOAT:
+        case N_IDENTIFIER:
             PRINT_CODE("MOVE LF@%%%s ", ast->Lptr->value);
             generate_constant(ast->Rptr->type, ast->Rptr->value);
             PRINT_NL();
             break;
 
-        case N_IDENTIFIER:
+        case N_FUNC:
+            PRINT_CODE("CREATEFRAME\n");
+            PRINT_CODE("CALL $%s\n", ast->Rptr->value);
+            PRINT_CODE("MOVE LF@%%%s TF@%%retval1\n", ast->Lptr->value);
             break;
     }
 }
@@ -119,13 +134,24 @@ void generate_var_init(Tree *ast)
 void generate_multivar_init(Tree *vars, Tree *expr)
 {
     //PRINT_CODE("MOVE LF@%%%s ", vars->Rptr->value);
+    // debug_print("%d %d", expr->Lptr->type, expr->Rptr->type);
+    // if(expr->Lptr && expr->Lptr->type == N_LIT_STRING && expr->Rptr->type == N_LIT_STRING)
+    // {
+    //     PRINT_CODE("CONCAT LF@%%%s ", vars->Rptr->value);
+    //     generate_expr(expr);
+    // }
+    // else
+    // {
     generate_expr(expr);
-    PRINT_CODE("POPS %s\n", vars->Rptr->value);
+    PRINT_CODE("POPS LF@%%%s\n", vars->Rptr->value);
+    // }
+
     if(!vars->Lptr)
     {
         return;
     }
     generate_multivar_init(vars->Lptr, expr->Lptr);
+
 }
 
 void generate_expr(Tree *ast)
@@ -141,6 +167,14 @@ void generate_expr(Tree *ast)
             break;
 
         case N_PLUS:
+            if(ast->Lptr && ast->Lptr->type == N_LIT_STRING && ast->Rptr->type == N_LIT_STRING)
+            {
+                generate_constant(ast->Lptr->type, ast->Lptr->value);
+                PRINT_CODE(" ");
+                generate_constant(ast->Rptr->type, ast->Rptr->value);
+                PRINT_NL();
+                break;
+            }
             PRINT_CODE("PUSHS ");
             generate_constant(ast->Rptr->type, ast->Rptr->value);
             PRINT_NL();
@@ -152,6 +186,7 @@ void generate_expr(Tree *ast)
             PRINT_CODE("PUSHS ");
             generate_constant(ast->Lptr->type, ast->Lptr->value);
             PRINT_NL();
+            
             PRINT_CODE("ADDS\n");
             break;
 
@@ -197,18 +232,23 @@ void generate_expr(Tree *ast)
             PRINT_CODE("PUSHS ");
             generate_constant(ast->Lptr->type, ast->Lptr->value);
             PRINT_NL();
-            PRINT_CODE("TYPE LF@%%%s", ast->Lptr->value);
-            PRINT_CODE("TYPE TF@%%tmp LF@%%%s\n", ast->Lptr->value);
-            PRINT_CODE("TYPE TF@%%tmp LF@%%%s\n", ast->Rptr->value);
             
-            if(ast->Lptr->type == N_LIT_FLOAT && ast->Rptr->type == N_LIT_FLOAT)
+            if(ast->Lptr->type == N_LIT_INT && ast->Rptr->type == N_LIT_INT)
+            {
+                PRINT_CODE("IDIVS\n");
+            }
+            else if(ast->Lptr->type == N_LIT_FLOAT && ast->Rptr->type == N_LIT_FLOAT)
             {
                 PRINT_CODE("DIVS\n");
             }
             else
             {
-                PRINT_CODE("IDIVS\n");
+                PRINT_CODE("DIVS\n");
+                // PRINT_CODE("TYPE LF@%%numerator LF@%%%s\n", ast->Lptr->value);
+                // PRINT_CODE("TYPE LF@%%denominator LF@%%%s\n", ast->Rptr->value);
             }
+            
+            
             break;
 
         case SEQ:
@@ -268,7 +308,6 @@ void generate_print(Tree *ast)
             PRINT_NL();
             break;
 
-        // TODO: lookup for the value in symtable
         case N_IDENTIFIER:
             PRINT_CODE("WRITE ");
             generate_constant(ast->Rptr->type, ast->Rptr->value);
@@ -282,4 +321,34 @@ void generate_print(Tree *ast)
         return;
     }
     generate_print(ast->Lptr);
+}
+
+void generate_return(Tree *ast)
+{
+    static int retval = 1;
+    switch(ast->Rptr->type)
+    {
+        case N_LIT_INT:
+        case N_LIT_STRING:
+        case N_LIT_FLOAT:
+            PRINT_CODE("DEFVAR LF@%%retval%d\n", retval);
+            PRINT_CODE("MOVE LF@%%retval%d ", retval);
+            generate_constant(ast->Rptr->type, ast->Rptr->value);
+            PRINT_NL();
+            break;
+
+        case N_IDENTIFIER:
+            PRINT_CODE("MOVE LF@%%retval%d LF@%%%s\n", retval, ast->Rptr->value);
+            break;
+
+        default:
+            break;
+    }
+
+    if (!ast->Lptr)
+    {
+        return;
+    }
+    retval++;
+    generate_return(ast->Lptr);
 }
