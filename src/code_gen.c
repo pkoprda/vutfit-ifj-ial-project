@@ -111,7 +111,7 @@ void generate_label(Tree *ast)
 
 void generate_function(Tree *ast)
 {
-    int ifc;
+    int ifc,forc;
     switch (ast->Rptr->type)
     {
         case N_IDENT_DEF:
@@ -122,11 +122,18 @@ void generate_function(Tree *ast)
             if (ast->Rptr->Lptr->type != SEQ)
             {
                 if(ast->Rptr->Rptr->type != N_PLUS && ast->Rptr->Rptr->type != N_MINUS &&
-                   ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL){
+                   ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL && 
+                   ast->Rptr->Rptr->type != N_FUNC)
+                {
                     PRINT_CODE("MOVE LF@%%%s ", ast->Rptr->Lptr->value);
                     gen_expr(ast->Rptr->Rptr);
                 }
-                else{
+                else if(ast->Rptr->Rptr->type == N_FUNC)
+                {
+                    gen_initvar_call(ast->Rptr->Rptr, ast->Rptr->Lptr->value);
+                }
+                else
+                {
                     gen_expr(ast->Rptr->Rptr);
                     PRINT_CODE("POPS LF@%%%s\n",ast->Rptr->Lptr->value);
                     PRINT_CODE("CLEARS\n");
@@ -156,14 +163,57 @@ void generate_function(Tree *ast)
             PRINT_CODE("CALL $%s\n", ast->Rptr->value);
             break; 
 
+        case N_FOR:
+            /* DEFVAR KAZDU PREMENNU */
+            forc = for_s;
+            for_s++;
+            if(ast->Rptr->Lptr->Rptr){
+                PRINT_CODE("DEFVAR ");
+                //for ; podm; ... {}
+                generate_constant(ast->Rptr->Lptr->Rptr->Lptr->type,ast->Rptr->Lptr->Rptr->Lptr->value);
+                PRINT_CODE(" ");
+                
+                if(ast->Rptr->Rptr->type != N_PLUS && ast->Rptr->Rptr->type != N_MINUS &&
+                   ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL && 
+                   ast->Rptr->Rptr->type != N_FUNC)
+                {
+                    // a = 6 MOVE LF@%a int@6
+                    PRINT_CODE("MOVE ");
+                    generate_constant(ast->Rptr->Lptr->Rptr->Lptr->type,ast->Rptr->Lptr->Rptr->Lptr->value);
+                    PRINT_CODE(" ");
+                    gen_expr(ast->Rptr->Lptr->Rptr->Rptr);
+                    PRINT_NL();
+
+                } else {
+                    // a= 6+5-7 POPS LF@%a
+                    gen_expr(ast->Rptr->Lptr->Rptr->Rptr);
+                    PRINT_CODE("POPS ");
+                    generate_constant(ast->Rptr->Lptr->Rptr->Lptr->type,ast->Rptr->Lptr->Rptr->Lptr->value);
+                    PRINT_NL();
+                }
+            }
+            PRINT_CODE("LABEL %d%strue\n", forc, function);
+            generate_condition(ast->Rptr->Lptr->Lptr->Rptr, forc, 1);
+            generate_function(ast->Rptr->Rptr);
+            /* a = a-1*/
+            if(ast->Rptr->Lptr->Lptr->Lptr->Rptr){
+                gen_expr(ast->Rptr->Lptr->Lptr->Lptr->Rptr->Rptr);
+                PRINT_CODE("POPS ");
+                generate_constant(ast->Rptr->Lptr->Lptr->Lptr->Rptr->Lptr->type,ast->Rptr->Lptr->Lptr->Lptr->Rptr->Lptr->value);
+                PRINT_NL();
+            }
+            PRINT_CODE("JUMP %d%strue\n", forc, function);
+            PRINT_CODE("LABEL %d%sfalse\n", forc, function);
+
+
+            break;
+
         case N_IF:
             /* Vyries condition, ktora je sirsi expression */
             ifc = if_s;
             if_s++;
-
-            generate_condition(ast->Rptr->Lptr->Rptr, ifc);
-            /*Telo ifu() predpokladam, ze 
-            */
+            
+            generate_condition(ast->Rptr->Lptr->Rptr, ifc, 0);
            if(ast->Rptr->Rptr->Rptr)
            {
                 generate_function(ast->Rptr->Rptr->Rptr);
@@ -171,7 +221,6 @@ void generate_function(Tree *ast)
             PRINT_CODE("JUMP %s%dtrue\n", function, ifc);
             PRINT_CODE("LABEL %s%dfalse", function, ifc );
             PRINT_NL();
-            /*Telo else() predpokladam, ze */
             if(ast->Rptr->Rptr->Lptr)
             {
                 generate_function(ast->Rptr->Rptr->Lptr);
@@ -199,7 +248,8 @@ void generate_function(Tree *ast)
 }
 
 // TODO: conditions <= >=
-void generate_condition(Tree *ast, int ifc){
+// type: 0 - IF, 1 - FOR
+void generate_condition(Tree *ast, int count,  int type){
     switch (ast->type)
     {
     case N_GREATER:
@@ -210,8 +260,11 @@ void generate_condition(Tree *ast, int ifc){
         PRINT_NL();
         //!compvar a true budu globalne variables
         // JUMPIFNEQ labelfalse !compvar !true
-        PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, ifc);
-
+        if (type == 0){
+            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, count);
+        } else {
+            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar GF@!true\n", count, function);
+        }
         break;
     case N_LESS:
         PRINT_CODE("LT GF@!compvar ");
@@ -220,7 +273,11 @@ void generate_condition(Tree *ast, int ifc){
         generate_constant(ast->Rptr->type, ast->Rptr->value);
         PRINT_NL();
         //!compvar a true budu globalne variables
-        PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, ifc);
+        if (type == 0){
+            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, count);
+        } else {
+            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar GF@!true\n", count, function);
+        }
         break;
 
     case N_EQUAL:
@@ -230,7 +287,11 @@ void generate_condition(Tree *ast, int ifc){
         generate_constant(ast->Rptr->type, ast->Rptr->value);
         PRINT_NL();
         //!compvar a true budu globalne variables
-        PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, ifc);
+        if (type == 0){
+            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, count);
+        } else {
+            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar GF@!true\n", count, function);
+        }
         break;
     case N_NOT_EQUAL:
         PRINT_CODE("EQ GF@!compvar ");
@@ -239,7 +300,11 @@ void generate_condition(Tree *ast, int ifc){
         generate_constant(ast->Rptr->type, ast->Rptr->value);
         PRINT_NL();
         //!compvar a true budu globalne variables
-        PRINT_CODE("JUMPIFEQ %s%dfalse GF@!compvar GF@!true\n", function, ifc);
+        if (type == 0){
+            PRINT_CODE("JUMPIFEQ %s%dfalse GF@!compvar GF@!true\n", function, count);
+        } else {
+            PRINT_CODE("JUMPIFEQ %d%sfalse GF@!compvar GF@!true\n", count, function);
+        }
         break;
     
     default:
@@ -296,22 +361,55 @@ void generate_var_def(Tree *ast)
     }
 }
 
-// TODO: funkcie napr. inputi(), inputs(), inputf(), substr(), ord(), chr()
+// TODO: Runtime errors u funkcii inputi(), inputs(), inputf()
+// TODO: substr(), ord(), chr()
 void generate_multivar_init(Tree *vars, Tree *expr)
 {
-    if(expr->Rptr->type == N_PLUS || expr->Rptr->type == N_MINUS || 
-       expr->Rptr->type == N_MULL || expr->Rptr->type == N_DIV)
+    switch(expr->Rptr->type)
     {
-        gen_expr(expr->Rptr);
-        PRINT_CODE("POPS LF@%%%s\n", vars->Rptr->value);
-        PRINT_CODE("CLEARS\n");
-    }
-    else
-    {
-        PRINT_CODE("MOVE LF@%%%s ", vars->Rptr->value);
-        gen_expr(expr->Rptr); 
-    }
+        case N_PLUS:
+        case N_MINUS:
+        case N_MULL:
+        case N_DIV:
+            gen_expr(expr->Rptr);
+            PRINT_CODE("POPS LF@%%%s\n", vars->Rptr->value);
+            PRINT_CODE("CLEARS\n");
+            break;
+
+        case N_INPUTI:
+            PRINT_CODE("READ LF@%%%s int\n", vars->Rptr->value);
+            if(!vars->Lptr->Lptr) return;
+            generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
+            break;
+
+        case N_INPUTS:
+            PRINT_CODE("READ LF@%%%s string\n", vars->Rptr->value);
+            if(!vars->Lptr->Lptr) return;
+            generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
+            break;
+
+        case N_INPUTF:
+            PRINT_CODE("READ LF@%%%s float\n", vars->Rptr->value);
+            if(!vars->Lptr->Lptr) return;
+            generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
+            break;
+
+        case N_SUBSTR:
+            if(!vars->Lptr->Lptr) return;
+            generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
+            break;
+
+        case N_ORD:
+            break;
         
+        case N_CHR:
+            break;
+        
+        default:
+            PRINT_CODE("MOVE LF@%%%s ", vars->Rptr->value);
+            gen_expr(expr->Rptr);
+            break;
+    }        
 
     if(!vars->Lptr)
     {
@@ -326,6 +424,7 @@ void gen_expr(Tree *ast){
         case N_LIT_INT:
         case N_LIT_STRING:
         case N_LIT_FLOAT:
+        case N_IDENTIFIER:
             generate_constant(ast->type, ast->value);
             PRINT_NL();
             break;
@@ -336,6 +435,17 @@ void gen_expr(Tree *ast){
             calculate_expr(ast);
             break;
     }
+}
+
+void gen_initvar_call(Tree *ast, char *identif)
+{
+    PRINT_CODE("CREATEFRAME\n");
+    if(ast->Lptr)
+    {
+        generate_call(ast->Lptr);
+    }
+    PRINT_CODE("CALL $%s\n", ast->value);
+    PRINT_CODE("MOVE LF@%%%s TF@%%retval1\n", identif);
 }
 
 int getIDtype2(char *function, char *ID, int forcnt, int ifcnt, int hide){
@@ -491,6 +601,15 @@ void generate_return(Tree *ast)
             PRINT_CODE("DEFVAR LF@%%retval%d\n", retval);
             PRINT_CODE("MOVE LF@%%retval%d LF@%%%s\n", retval, ast->Rptr->value);
             break;
+        
+        case N_PLUS:
+        case N_MINUS:
+        case N_MULL:
+        case N_DIV:
+            PRINT_CODE("DEFVAR LF@%%retval%d\n", retval);
+            gen_expr(ast->Rptr);
+            PRINT_CODE("POPS LF@%%retval%d ", retval);
+            PRINT_NL();
 
         default:
             break;
