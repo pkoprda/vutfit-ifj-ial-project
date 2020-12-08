@@ -209,6 +209,25 @@ void generate_condition(Tree *ast, int ifc){
         //!compvar a true budu globalne variables
         PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, ifc);
         break;
+
+    case N_EQUAL:
+        PRINT_CODE("EQ GF@!compvar ");
+        generate_constant(ast->Lptr->type, ast->Lptr->value);
+        PRINT_CODE(" ");
+        generate_constant(ast->Rptr->type, ast->Rptr->value);
+        PRINT_NL();
+        //!compvar a true budu globalne variables
+        PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, ifc);
+        break;
+    case N_NOT_EQUAL:
+        PRINT_CODE("EQ GF@!compvar ");
+        generate_constant(ast->Lptr->type, ast->Lptr->value);
+        PRINT_CODE(" ");
+        generate_constant(ast->Rptr->type, ast->Rptr->value);
+        PRINT_NL();
+        //!compvar a true budu globalne variables
+        PRINT_CODE("JUMPIFEQ %s%dfalse GF@!compvar GF@!true\n", function, ifc);
+        break;
     
     default:
         break;
