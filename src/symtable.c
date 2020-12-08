@@ -123,6 +123,7 @@ void newSym(tKey key, int type, char *value, int hide, int forcnt, int ifcnt, Sy
         tmp = tmp->down;
     } while (tmp != NULL);
     tmp->down = new;
+    new->down = NULL;
     new->next = NULL;
 }
 
@@ -152,7 +153,47 @@ SymTItem *searchdown(SymTItem *sym, int hide, int forcnt, int ifcnt)
         {
             return tmp;
         }
+        // printf("hore-%p\n", tmp);
         tmp = tmp->down;
+        // printf("dole-%p\n", tmp);
+    }
+    // printf("skoncil\n");
+    return NULL;
+}
+
+SymTItem *searchforID(SymTItem *sym, int hide, int forcnt, int ifcnt)
+{
+    SymTItem *tmp = sym;
+    while (tmp != NULL)
+    {
+        if (tmp->forcnt == forcnt && tmp->ifcnt == ifcnt && tmp->hide == hide)
+        {
+            return tmp;
+        }
+        tmp = tmp->down;
+    }
+    int i;
+    int n = 1;
+    while (hide >= n)
+    {
+        i = 1;
+        while (i <= ifcnt || i <= forcnt)
+        {
+            tmp = sym;
+            while (tmp != NULL)
+            {
+                if (tmp->forcnt == forcnt-i || tmp->ifcnt == ifcnt-i)
+                {
+                    if (tmp->hide == hide-n)
+                    {
+                        return tmp;
+                    }
+                }
+                tmp = tmp->down;
+            }
+            i++;
+        }
+        n++;
     }
     return NULL;
 }

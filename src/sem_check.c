@@ -133,7 +133,7 @@ int getTypes(Tree *ast, int retvar, int count, SymTable *sym)
 
 void underscorecheck(Tree *ast)
 {
-    if (strcmp(ast->value, "_")==0)
+    if (strcmp(ast->value, "_") == 0)
     {
         error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
     }
@@ -160,7 +160,7 @@ void statm(Tree *ast, SymTable *sym)
     {
         return;
     }
-    
+
     SymTItem *sItem = NULL;
 
     // divide by 0
@@ -209,7 +209,7 @@ void statm(Tree *ast, SymTable *sym)
         }
         else if (ast->Rptr->type == N_IDENTIFIER)
         {
-            if (strcmp(ast->Rptr->value, "_") ==0)
+            if (strcmp(ast->Rptr->value, "_") == 0)
             {
                 error_exit(SEM_ERROR_OTHERS, "Aritmetic operation with undescore as identifier");
             }
@@ -224,7 +224,7 @@ void statm(Tree *ast, SymTable *sym)
             }
             stcheck(sItem->type);
         }
-        else 
+        else
         {
             statm(ast->Rptr, sym);
         }
@@ -235,7 +235,7 @@ void statm(Tree *ast, SymTable *sym)
         }
         else if (ast->Lptr->type == N_IDENTIFIER)
         {
-            if (strcmp(ast->Lptr->value, "_") ==0)
+            if (strcmp(ast->Lptr->value, "_") == 0)
             {
                 error_exit(SEM_ERROR_OTHERS, "Aritmetic operation with undescore as identifier");
             }
@@ -250,7 +250,7 @@ void statm(Tree *ast, SymTable *sym)
             }
             stcheck(sItem->type);
         }
-        else 
+        else
         {
             statm(ast->Lptr, sym);
         }
@@ -352,7 +352,7 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
         return 31;
         break;
     case N_LEN:;
-        if ((stSearch(sym, ast->value) != NULL && stSearch(sym, ast->value)->type != 2) || (stSearch(sym, ast->value) == NULL && (ast->value)[0]!='\"'))
+        if ((stSearch(sym, ast->value) != NULL && stSearch(sym, ast->value)->type != 2) || (stSearch(sym, ast->value) == NULL && (ast->value)[0] != '\"'))
         {
             error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
         }
@@ -365,21 +365,20 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
         {
             if (tmp->Rptr->type == N_IDENTIFIER)
             {
-                if (strcmp(tmp->Rptr->value, "_")==0)
+                if (strcmp(tmp->Rptr->value, "_") == 0)
                 {
                     error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
                 }
-
             }
             tmp = tmp->Lptr;
         }
         if (ast->Lptr->Rptr->type == N_IDENTIFIER)
         {
-            if (stSearch(sym, ast->Lptr->Rptr->value) == NULL && (ast->Lptr->Rptr->value)[0]!='\"')
+            if (stSearch(sym, ast->Lptr->Rptr->value) == NULL && (ast->Lptr->Rptr->value)[0] != '\"')
             {
                 error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
             }
-            if((stSearch(sym, ast->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Rptr->value)->type != 2))
+            if ((stSearch(sym, ast->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Rptr->value)->type != 2))
             {
                 error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
             }
@@ -406,7 +405,7 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
                 error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
             }
         }
-        
+
         return 21;
         break;
     case N_ORD:
@@ -415,7 +414,7 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
         {
             if (tmp->Rptr->type == N_IDENTIFIER)
             {
-                if (strcmp(tmp->Rptr->value, "_")==0)
+                if (strcmp(tmp->Rptr->value, "_") == 0)
                 {
                     error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
                 }
@@ -424,11 +423,11 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
         }
         if (ast->Lptr->Rptr->type == N_IDENTIFIER)
         {
-            if (stSearch(sym, ast->Lptr->Rptr->value) == NULL && (ast->Lptr->Rptr->value)[0]!='\"')
+            if (stSearch(sym, ast->Lptr->Rptr->value) == NULL && (ast->Lptr->Rptr->value)[0] != '\"')
             {
                 error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
             }
-            if((stSearch(sym, ast->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Rptr->value)->type != 2))
+            if ((stSearch(sym, ast->Lptr->Rptr->value) != NULL && stSearch(sym, ast->Lptr->Rptr->value)->type != 2))
             {
                 error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
             }
@@ -470,15 +469,25 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
         return 1;
         break;
     case N_IDENTIFIER:;
-        if (strcmp(ast->value, "_") ==0)
+        if (strcmp(ast->value, "_") == 0)
         {
             error_exit(SEM_ERROR_OTHERS, "Undescore can not be as a identifier");
-         }
-        SymTItem *Sitem = stSearch(sym, ast->value);
-        if (Sitem == NULL)
+        }
+        SymTItem *Sitem1 = stSearch(sym, ast->value);
+        if (Sitem1 == NULL)
         {
             error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
         }
+
+        // printf("--%s\n", ast->value);
+        SymTItem *Sitem = searchdown(Sitem1, hide, forcnt, ifcnt);
+        // printf("holub\n");
+        if (Sitem != NULL)
+        {
+            return Sitem->type;
+        }
+        // printf("cat\n");
+        Sitem = searchforID(Sitem1, hide, forcnt, ifcnt);
         return Sitem->type;
         break;
     }
@@ -497,7 +506,7 @@ void compare(Tree *ast)
     case N_NOT_EQUAL:
         return;
         break;
-    
+
     default:
         error_exit(SEM_ERROR_TYPE, "No comparison");
         return;
@@ -559,11 +568,11 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                     }
                 }
                 //printf("string %s \n", tmp->value);
-                if ((strcmp(tmp->value, "_") != 0 ) && sItem == NULL)
+                if ((strcmp(tmp->value, "_") != 0) && sItem == NULL)
                 {
                     error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
                 }
-                if ((strcmp(tmp->value, "_") != 0 ) && (type1 != sItem->type))
+                if ((strcmp(tmp->value, "_") != 0) && (type1 != sItem->type))
                 {
                     error_exit(SEM_ERROR_PARAMS, "Type of variable is not coresponding with assignment");
                 }
@@ -632,6 +641,7 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
 
         case N_PRINT:;
             tmp = ast->Rptr->Lptr;
+            // printf("ahoj\n");
             while (tmp != SEQ)
             {
                 if (tmp->Rptr->type == N_IDENTIFIER)
