@@ -63,3 +63,5 @@ log
 
 bin/ifj20
 tests/mojtest.go
+tests/test.go
+out.ifjcode20

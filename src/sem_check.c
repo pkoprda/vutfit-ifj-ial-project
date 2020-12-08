@@ -7,6 +7,7 @@ int ifcnt = 0;
 int forcnt = 0;
 int hide = 0;
 char *newvalue = NULL;
+FunTable *ft = NULL;
 
 /*
 void printhashtable(FunTable *fun)
@@ -743,10 +744,6 @@ void FUN_def(Tree *ast, FunTable *fun)
         if (ast->Lptr == NULL)
         {
             newFun(fun, name, 0, 0, 0, sym);
-            if (ast->Rptr != NULL)
-            {
-                InFuncGo(ast->Rptr, sym, fun, name);
-            }
             return;
         }
         int retvar = cnt(ast->Lptr, -1);
@@ -756,9 +753,37 @@ void FUN_def(Tree *ast, FunTable *fun)
         int types = getTypes(ast->Lptr, retvar, count, sym);
         fItem->types = types;
     }
+}
+
+void FUN_in(Tree *ast, FunTable *fun)
+{
+    char *name = ast->value;
+    FunTItem *fItem = ftSearch(fun, name);
     if (ast->Rptr != NULL)
     {
-        InFuncGo(ast->Rptr, sym, fun, name);
+        InFuncGo(ast->Rptr, fItem->sym, fun, name);
+    }
+}
+
+void FuncVisit(Tree *ast, FunTable *fun)
+{
+    if (ast->Lptr == NULL)
+    {
+        return;
+    }
+    ast = ast->Lptr;
+
+    if (ast->type == SEQ)
+    {
+        if (ast->Rptr->type == N_DEF_FUNC)
+        {
+            ifcnt = 0;
+            forcnt = 0;
+            hide = 0;
+            newvalue = NULL;
+            FUN_in(ast->Rptr, fun);
+        }
+        FuncVisit(ast, fun);
     }
 }
 
@@ -804,11 +829,11 @@ int semantics()
     ftInit(fun);
     FillPredefFunc(fun);
     FuncLookup(ast->Rptr, fun);
-
+    FuncVisit(ast->Rptr, fun);
+    ft = fun;
     //printhashtable(fun);
     //printsymtable(fun);
 
     //stdout_print("===========koniec semantiky====================\n \n");
-
     return 0;
 }

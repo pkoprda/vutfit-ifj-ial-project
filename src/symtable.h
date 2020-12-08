@@ -48,3 +48,5 @@ void newSym(tKey key, int type, char *value, int hide, int forcnt, int ifcnt, Sy
 FunTItem *ftSearch(FunTable *fun, tKey key);
 SymTItem *stSearch(SymTable *sym, tKey key);
 SymTItem *searchdown(SymTItem *sym, int hide, int forcnt, int ifcnt);
+
+extern FunTable *ft;
