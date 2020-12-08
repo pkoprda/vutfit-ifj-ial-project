@@ -82,12 +82,16 @@ void generate_label(Tree *ast)
         {
             PRINT_CODE("\nLABEL $%s\n", ast->Rptr->value);
             PRINT_CODE("PUSHFRAME\n");
-            if (ast->Rptr->Lptr->Lptr)
+            
+            if(ast->Rptr->Lptr)
             {
-                function = ast->Rptr->value;
-                if_s = 0;
-                for_s = 0;
-                generate_return_types(ast->Rptr->Lptr->Lptr);
+                if (ast->Rptr->Lptr->Lptr)
+                {
+                    function = ast->Rptr->value;
+                    if_s = 0;
+                    for_s = 0;
+                    generate_return_types(ast->Rptr->Lptr->Lptr);
+                }
             }
             if (ast->Rptr->Rptr)
             {
@@ -119,7 +123,7 @@ void generate_function(Tree *ast)
             {
                 if(ast->Rptr->Rptr->type != N_PLUS && ast->Rptr->Rptr->type != N_MINUS &&
                    ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL){
-                    generate_var_init(ast->Rptr->Lptr);
+                    PRINT_CODE("MOVE LF@%%%s ", ast->Rptr->Lptr->value);
                     gen_expr(ast->Rptr->Rptr);
                 }
                 else{
@@ -145,7 +149,10 @@ void generate_function(Tree *ast)
 
         case N_FUNC:
             PRINT_CODE("CREATEFRAME\n");
-            generate_call(ast->Rptr->Lptr);
+            if(ast->Rptr->Lptr)
+            {
+                generate_call(ast->Rptr->Lptr);
+            }
             PRINT_CODE("CALL $%s\n", ast->Rptr->value);
             break; 
 
@@ -157,12 +164,18 @@ void generate_function(Tree *ast)
             generate_condition(ast->Rptr->Lptr->Rptr, ifc);
             /*Telo ifu() predpokladam, ze 
             */
-            generate_function(ast->Rptr->Rptr->Rptr);
+           if(ast->Rptr->Rptr->Rptr)
+           {
+                generate_function(ast->Rptr->Rptr->Rptr);
+           }
             PRINT_CODE("JUMP %s%dtrue\n", function, ifc);
             PRINT_CODE("LABEL %s%dfalse", function, ifc );
             PRINT_NL();
             /*Telo else() predpokladam, ze */
-            generate_function(ast->Rptr->Rptr->Lptr);
+            if(ast->Rptr->Rptr->Lptr)
+            {
+                generate_function(ast->Rptr->Rptr->Lptr);
+            }
             PRINT_CODE("LABEL %s%dtrue", function, ifc );
             PRINT_NL();
             break;
@@ -185,7 +198,7 @@ void generate_function(Tree *ast)
     generate_function(ast->Lptr);
 }
 
-// TODO: conditions
+// TODO: conditions <= >=
 void generate_condition(Tree *ast, int ifc){
     switch (ast->type)
     {
@@ -252,7 +265,10 @@ void generate_var_def(Tree *ast)
 
         case N_FUNC:
             PRINT_CODE("CREATEFRAME\n");
-            generate_call(ast->Rptr->Lptr);
+            if(ast->Rptr->Lptr)
+            {
+                generate_call(ast->Rptr->Lptr);
+            }
             PRINT_CODE("CALL $%s\n", ast->Rptr->value);
             PRINT_CODE("MOVE LF@%%%s TF@%%retval1\n", ast->Lptr->value);
             break;
@@ -280,15 +296,22 @@ void generate_var_def(Tree *ast)
     }
 }
 
-void generate_var_init(Tree *ast)
-{
-    PRINT_CODE("MOVE LF@%%%s ", ast->value);
-}
-
+// TODO: funkcie napr. inputi(), inputs(), inputf(), substr(), ord(), chr()
 void generate_multivar_init(Tree *vars, Tree *expr)
 {
-    generate_expr(expr);
-    PRINT_CODE("POPS LF@%%%s\n", vars->Rptr->value);
+    if(expr->Rptr->type == N_PLUS || expr->Rptr->type == N_MINUS || 
+       expr->Rptr->type == N_MULL || expr->Rptr->type == N_DIV)
+    {
+        gen_expr(expr->Rptr);
+        PRINT_CODE("POPS LF@%%%s\n", vars->Rptr->value);
+        PRINT_CODE("CLEARS\n");
+    }
+    else
+    {
+        PRINT_CODE("MOVE LF@%%%s ", vars->Rptr->value);
+        gen_expr(expr->Rptr); 
+    }
+        
 
     if(!vars->Lptr)
     {
@@ -364,120 +387,6 @@ void calculate_expr(Tree *ast){
     }
 }
 
-void generate_expr(Tree *ast)
-{
-    //debug_print("Type: %d | Value:%s", ast->type, ast->value);
-    switch (ast->type)
-    {
-        case N_LIT_INT:
-        case N_LIT_STRING:
-        case N_LIT_FLOAT:
-            generate_constant(ast->type, ast->value);
-            PRINT_NL();
-            break;
-
-        case N_PLUS:
-            if(ast->Lptr && ast->Lptr->type == N_LIT_STRING && ast->Rptr->type == N_LIT_STRING)
-            {
-                generate_constant(ast->Lptr->type, ast->Lptr->value);
-                PRINT_CODE(" ");
-                generate_constant(ast->Rptr->type, ast->Rptr->value);
-                PRINT_NL();
-                break;
-            }
-            PRINT_CODE("PUSHS ");
-            generate_constant(ast->Rptr->type, ast->Rptr->value);
-            PRINT_NL();
-            if(ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
-               ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER)
-            {
-                break;
-            }
-            PRINT_CODE("PUSHS ");
-            generate_constant(ast->Lptr->type, ast->Lptr->value);
-            PRINT_NL();
-            
-            PRINT_CODE("ADDS\n");
-            break;
-
-        case N_MINUS:
-            PRINT_CODE("PUSHS ");
-            generate_constant(ast->Rptr->type, ast->Rptr->value);
-            PRINT_NL();
-            if(ast->Lptr && ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
-               ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER)
-            {
-                break;
-            }
-            PRINT_CODE("PUSHS ");
-            generate_constant(ast->Lptr->type, ast->Lptr->value);
-            PRINT_NL();
-            PRINT_CODE("SUBS\n");
-            break;
-
-        case N_MULL:
-            PRINT_CODE("PUSHS ");
-            generate_constant(ast->Rptr->type, ast->Rptr->value);
-            PRINT_NL();
-            if(ast->Lptr && ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
-               ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER)
-            {
-                break;
-            }
-            PRINT_CODE("PUSHS ");
-            generate_constant(ast->Lptr->type, ast->Lptr->value);
-            PRINT_NL();
-            PRINT_CODE("MULS\n");
-            break;
-
-        case N_DIV:
-            PRINT_CODE("PUSHS ");
-            generate_constant(ast->Rptr->type, ast->Rptr->value);
-            PRINT_NL();
-            if(ast->Lptr && ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
-               ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER)
-            {
-                break;
-            }
-            PRINT_CODE("PUSHS ");
-            generate_constant(ast->Lptr->type, ast->Lptr->value);
-            PRINT_NL();
-            
-            if(ast->Lptr->type == N_LIT_INT && ast->Rptr->type == N_LIT_INT)
-            {
-                PRINT_CODE("IDIVS\n");
-            }
-            else if(ast->Lptr->type == N_LIT_FLOAT && ast->Rptr->type == N_LIT_FLOAT)
-            {
-                PRINT_CODE("DIVS\n");
-            }
-            else
-            {
-                PRINT_CODE("DIVS\n");
-                // PRINT_CODE("TYPE LF@%%numerator LF@%%%s\n", ast->Lptr->value);
-                // PRINT_CODE("TYPE LF@%%denominator LF@%%%s\n", ast->Rptr->value);
-            }
-            
-            
-            break;
-
-        case SEQ:
-            if(!ast->Rptr)
-            {
-                return;
-            }
-            generate_expr(ast->Rptr); 
-            break;
-
-        default:
-            break;
-    }
-
-    if(ast->Lptr && ast->Lptr->type != N_LIT_INT && ast->Lptr->type != N_LIT_STRING &&
-       ast->Lptr->type != N_LIT_FLOAT && ast->Lptr->type != N_IDENTIFIER){
-           generate_expr(ast->Lptr);
-    }
-}
 
 void generate_constant(int type, char* value)
 {
