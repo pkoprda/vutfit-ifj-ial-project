@@ -8,17 +8,13 @@ ZIP = xkoprd00.zip
 all: $(BIN)
 
 $(BIN): $(SOURCE)
+	$(CC) $(SOURCE) $(CFLAGS) -o $(BIN)
+
+debug:
 	$(CC) $(SOURCE) $(CFLAGS) -DDEBUG -g -o $(BIN)
 
-code:
-	$(CC) $(SOURCE) $(CFLAGS) -o $(BIN)
-
-test:
-	$(CC) $(SOURCE) $(CFLAGS) -o $(BIN)
-	@./script.sh
-
 zip:
-	zip -j $(ZIP) src/* Makefile
+	zip -j $(ZIP) src/* doc/* Makefile rozdeleni 
 
 clean:
 	rm bin/ifj20

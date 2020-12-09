@@ -1,5 +1,6 @@
 /*
- * IAL - hashtable
+ * Projekt: Prekladac jazyka  IFJ20 do medzikodu IFJcode20
+ * Popis: IAL - tabulka s rozptylenymi polozkami
  * Autori: Viliam Holik - xholik14, Pavol Babjak - xbabja03
  */
 

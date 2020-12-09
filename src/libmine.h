@@ -1,3 +1,11 @@
+/**
+ * Projekt: Prekladac jazyka  IFJ20 do medzikodu IFJcode20
+ * Popis: Rozhranie pre cely prekladac
+ * Autori: Peter Koprda - xkoprd00, Daniel Paul - xpauld00,
+ *         Viliam Holik - xholik14, Pavol Babjak - xbabja03 
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -16,6 +24,7 @@
 #define UNUSED(x) (void)(x)
 #define SIZE_STRING_INC 8
 #define LINE_BUFF_LEN 128
+#define STACK_SIZE 128
 #define MIN_LEN_KEYWORD 2
 #define MAX_LEN_KEYWORD 10
 
@@ -56,7 +65,7 @@ typedef enum
     TOKEN_CURLY_LBRACKET,
     TOKEN_CURLY_RBRACKET,
 
-    // keywordy
+    // klucove slova
     KEYWORD_PACKAGE,
     KEYWORD_IF,
     KEYWORD_ELSE,
@@ -92,6 +101,7 @@ typedef enum
 
 } Types;
 
+// typ uzlu v abstraktnom syntaktickom strome
 typedef enum
 {
     SEQ,
@@ -138,35 +148,51 @@ typedef enum
 
 } Nodes;
 
+/* Štruktúra reprezentujúca precedenčnú tabuľku */
 typedef struct
 {
+    /* Hodnota enumu tokenu */
     int token;
+    /* Hodnota precedencie */
     int precedence;
+    /* Hodnota enumu uzlu */
     int node;
 } attrTable;
 extern attrTable table[];
 
+/* Štruktúra reprezentujúca uzol v abstraktnom syntaktickom strome */
 typedef struct Tree
 {
+    /* Typ uzlu reprezentovaný enumom Nodes */
     int type;
+    /* Hodnota uzlu */
     char *value;
+    /* Pravý a ľavý pointer */
     struct Tree *Lptr;
     struct Tree *Rptr;
 } Tree;
 
+/* Štruktúra reprezentujúca token */
 typedef struct tToken
 {
+    /* Typ tokenu reprezentovaný enumom types */
     int type;
+    /* Hodnota tokenu (ak nejakú má) */
     char *value;
 } * TokenPtr;
 
+/* Štruktúra reprezentujúca zásobník tokenov */
 typedef struct
-{
+{   
+    /* Pole pointerov na tokeny*/
     void **value;
+    /* Vrchol zásobníku */
     int top;
+    /* Veľkosť zásobníku */
     int size;
 } Stack;
 
+/* Štruktúra reprezentujúca string */
 typedef struct
 {
     char *str;
@@ -174,27 +200,44 @@ typedef struct
     unsigned int allocSize;
 } string;
 
+/* Funkcie na prácu s abstraktným dátovým typom - zásobníkom */
+
+/* Inicializácia zásobníku */
 void initStack(Stack *s);
+/* Vrátenie tokenu na vrchole zásobníku */
 void *stackTop(Stack *s);
+/* Popnutie zo zásobníku */
 void stackPop(Stack *s);
+/* Uloženie tokenu na zásobník */
 void stackPush(Stack *s, void *p);
+/* Uvoľnenie z pamäte */
 void stackFree(Stack *s);
+/* Otočenie prvkov na zásobníku */
 void stackFlip(Stack *s);
-void stackPrint(Stack *s, char *displayToken[]);
+/* Skontorlovanie, či je zásobník prázdny */
 int stackEmpty(Stack *s);
 
+/* Deep copy stringu */
 char *my_strdup(const char *str);
 int lexer();
+/* Funckie pre buffer */
 string *initBuffer();
 void clearBuffer(string *buffer);
 void freeBuffer(string *buffer);
+
+/* Vytvorenie tokenu*/
 TokenPtr initToken(int type, char *value);
+/* Zobranie tokenu z vrcholu zásobníka */
+TokenPtr getToken(Stack *s);
+/* Vrátenie tokenu na zásobník */
+void ungetToken(Stack *s);
+
+/* Funkcie na prácu so stringom */
 string *addChar(string *buffer, char c);
 void initString(string *s);
-TokenPtr getToken(Stack *s);
-void ungetToken(Stack *s);
 void convertString(char* val);
 
+/* Funkcie pre pravidlá gramatiky v syntaktickej analýze */
 int parser();
 Tree *parse();
 Tree *prolog();
@@ -215,7 +258,9 @@ void expectToken(int type);
 void optionalEOL();
 void checkForExcessEOL();
 
+/* Vytvorenie uzlu v abstraktnom syntaktickom strome */
 Tree *createNode(int type, Tree *Lptr, Tree *Rptr);
+/* Vytvorenie listu v abstraktnom syntaktickom strome */
 Tree *createLeaf(int type, char *value);
 
 void prt_ast(Tree *t);

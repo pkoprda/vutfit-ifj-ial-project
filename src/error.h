@@ -1,3 +1,9 @@
+/**
+ * Projekt: Prekladac jazyka  IFJ20 do medzikodu IFJcode20
+ * Popis: Navratove hodnoty prekladaca
+ * Autor: Peter Koprda - xkoprd00
+ */
+
 #ifndef _ERROR_H
 #define _ERROR_H
 

@@ -1,3 +1,9 @@
+/**
+ * Projekt: Prekladac jazyka  IFJ20 do medzikodu IFJcode20
+ * Popis: Rozhranie pre cely prekladac
+ * Autor: Daniel Paul - xpauld00,
+ */
+
 #include "libmine.h"
 
 char *displayNode[] = {"SEQ", "PACKAGE_MAIN", "PARAMS_RETURNTYPES", "DEF_FUNC", "IDENTIFIER",
@@ -6,6 +12,7 @@ char *displayNode[] = {"SEQ", "PACKAGE_MAIN", "PARAMS_RETURNTYPES", "DEF_FUNC", 
                        "PLUS", "MINUS", "MULL", "DIV", "GREATER", "LESS", "EQ_GREATER", "EQ_LESS", "EQUAL", "NOT_EQUAL",
                        "IF", "ELSE", "RETURN", "LEN", "SUBSTR", "ORD", "CHR", "FOR", "INT2FLOAT", "FLOAT2INT"};
 
+/* Precedenčná tabuľka */
 attrTable table[] = {
     {TOKEN_IDENTIF, -1, N_IDENTIFIER},
     {IDENTIF_DEF, -1, N_IDENT_DEF},
@@ -50,7 +57,6 @@ attrTable table[] = {
     {FUNC_SUBSTR, -1, N_SUBSTR},
     {FUNC_ORD, -1, N_ORD},
     {FUNC_CHR, -1, N_CHR},
-    /*33?*/
     {43, -1, N_FUNC},
 };
 
@@ -58,6 +64,7 @@ TokenPtr tok;
 Tree *ast;
 bool func_main_defined = false;
 
+/* Začiatočná funkcia syntaktickej analýzy, premenná "ast" obsahuje vytvorený abstraktný syntaktický strom. */
 int parser()
 {
     ast = parse();
@@ -69,6 +76,7 @@ int parser()
     return 0;
 }
 
+/* Začína tu metóda rekurzívneho zostupu */
 Tree *parse()
 {
     Tree *root = NULL;
@@ -80,13 +88,13 @@ Tree *parse()
     return root;
 }
 
+/* Pomocná funkcia, ktorá kontroluje EOL tokeny, ktoré sú navyše */
 void checkForExcessEOL()
 {
     if (!stackEmpty(&stack))
     {
         while (getToken(&stack)->type == TOKEN_EOL)
         {
-            //debug_print("\n%s\n", (TokenPtr)stack->value[stack->top]);
             if (stackEmpty(&stack))
             {
                 return;
@@ -96,6 +104,7 @@ void checkForExcessEOL()
     }
 }
 
+/* Funkcia, reprezentujúca neterminál "prolog" */
 Tree *prolog()
 {
     Tree *root = NULL;
@@ -120,6 +129,7 @@ Tree *prolog()
     return root;
 }
 
+/* Funkcia, reprezentujúca neterminál "program" */
 Tree *program()
 {
     checkForExcessEOL();
@@ -133,7 +143,8 @@ Tree *program()
     tok = getToken(&stack);
     if (tok == NULL)
         return NULL;
-    /*TODO: Insert into tree, insert into symtable*/
+
+    /* Pravidlo pre vytvorenie funkcie */
     if (tok->type == KEYWORD_FUNC)
     {
         tok = getToken(&stack);
@@ -181,6 +192,7 @@ Tree *program()
     return root;
 }
 
+/* Táto funkcia rieši volitelný token EOL */
 void optionalEOL()
 {
     if (!stackEmpty(&stack))
@@ -193,6 +205,7 @@ void optionalEOL()
     }
 }
 
+/* Táto funkcia rieši gramatiku návratových typov funkcií - neterminál returntype  */
 Tree *rt()
 {
     Tree *returntype = NULL;
@@ -215,6 +228,7 @@ Tree *rt()
     }
 }
 
+/* Ak sa nachádza návratových typov viac - neterminál returntype2 */
 Tree *rt2()
 {
     Tree *returntype = NULL;
@@ -231,6 +245,7 @@ Tree *rt2()
     }
 }
 
+/* Funkcia na zistenie typu návratovej hodnoty - neterminál type */
 Tree *getRT()
 {
     tok = getToken(&stack);
@@ -254,6 +269,7 @@ Tree *getRT()
     }
 }
 
+/* Spracovanie parametrov funkcie - neterminál params */
 Tree *params()
 {
     Tree *param = NULL;
@@ -295,6 +311,7 @@ Tree *params()
     }
 }
 
+/* Spracovanie statementov - neterminál stmt */
 Tree *stmt()
 {
     Tree *root = NULL;
@@ -312,15 +329,14 @@ Tree *stmt()
     Tree *id_init = NULL;
     Tree *leaf = NULL;
 
-    // printf("I get here\n");
     if (stackEmpty(&stack))
     {
-        // printf("I get here too\n");
         return root;
     }
     tok = getToken(&stack);
     switch (tok->type)
     {
+    /* Riešenie funkcie print */
     case FUNC_PRINT:
         expectToken(TOKEN_ROUND_LBRACKET);
         help = createNode(N_PRINT, terms(), NULL);
@@ -328,12 +344,13 @@ Tree *stmt()
         expectToken(TOKEN_EOL);
         root = createNode(SEQ, stmt(), help);
         break;
+    /* Riešenie priradenia: var := expr, var = expr, var1,var2 = expr1,expr2 */
     case TOKEN_IDENTIF:
         help = stmt2(tok->value);
         expectToken(TOKEN_EOL);
         root = createNode(SEQ, stmt(), help);
         break;
-
+    /* Riešenie returnu */
     case KEYWORD_RETURN:
         tok = getToken(&stack);
         if (tok->type != TOKEN_EOL)
@@ -343,14 +360,15 @@ Tree *stmt()
         }
         else
         {
+            root = createNode(SEQ, NULL, createNode(N_RETURN, NULL, NULL));
             ungetToken(&stack);
         }
         expectToken(TOKEN_EOL);
         break;
-
+    /* Riešenie foru */
     case KEYWORD_FOR:
 
-        /*id_def*/
+        /* Definícia premennej (ak existuje) */
         tok = getToken(&stack);
         if (tok->type == TOKEN_IDENTIF)
         {
@@ -364,7 +382,7 @@ Tree *stmt()
         }
         expectToken(TOKEN_SEMICOLON);
 
-        /*for_expr*/
+        /* Riešenie porovnávacej podmienky */
         for_expr = createNode(SEQ, NULL, expr(0));
         if (for_expr->Rptr == NULL)
         {
@@ -372,7 +390,7 @@ Tree *stmt()
         }
         expectToken(TOKEN_SEMICOLON);
 
-        /*id_init*/
+        /* Riešenie príkazu priradenia (ak existuje) */
         tok = getToken(&stack);
         if (tok->type == TOKEN_IDENTIF)
         {
@@ -385,7 +403,6 @@ Tree *stmt()
             ungetToken(&stack);
         }
 
-        /*adding id_init as Lptr to for_expr*/
         for_expr->Lptr = createNode(SEQ, NULL, id_init);
 
         expectToken(TOKEN_CURLY_LBRACKET);
@@ -393,11 +410,12 @@ Tree *stmt()
         help = createNode(N_FOR, createNode(SEQ, for_expr, id_def), stmt());
         expectToken(TOKEN_CURLY_RBRACKET);
         optionalEOL();
-        //expectToken(TOKEN_EOL);
         root = createNode(SEQ, stmt(), help);
         break;
+    /* Riešenie ifu */
     case KEYWORD_IF:
 
+        /* Vytvorenie podmienky */
         condition = createNode(SEQ, NULL, expr(0));
         if (condition->Rptr == NULL)
         {
@@ -416,6 +434,7 @@ Tree *stmt()
         help = createNode(N_IF, condition, createNode(N_ELSE, els_cont, if_cont));
         root = createNode(SEQ, stmt(), help);
         break;
+    /* Vstavané funkcie musia byť priradené premennej */
     case FUNC_INPUTS:
     case FUNC_INPUTF:
     case FUNC_INPUTI:
@@ -425,7 +444,7 @@ Tree *stmt()
     case FUNC_SUBSTR:
     case FUNC_ORD:
     case FUNC_CHR:
-        error_exit(SEM_ERROR_PARAMS, "Funkcie musia byt priradene premennej");
+        error_exit(SEM_ERROR_PARAMS, "Inbuilt functions have to be assigned to variable");
     case TOKEN_EOL:
         return stmt();
     default:
@@ -434,6 +453,7 @@ Tree *stmt()
     return root;
 }
 
+/* Riešenie priradenia  - neterminál stmt2 */
 Tree *stmt2(char *name)
 {
     Tree *root = NULL;
@@ -458,12 +478,14 @@ Tree *stmt2(char *name)
             error_exit(SYNTAX_ERROR, "Right side of EXPR is empty.")
         }
         break;
+    /* func() */
     case TOKEN_ROUND_LBRACKET:
         help = arg_coma();
         expectToken(TOKEN_ROUND_RBRACKET);
         root = createNode(N_FUNC, help, NULL);
         root->value = my_strdup(name);
         break;
+    /* var1,var2 = expr1, expr2 */
     case TOKEN_COMMA:
         help = stmt3();
         tok = getToken(&stack);
@@ -484,6 +506,7 @@ Tree *stmt2(char *name)
     return root;
 }
 
+/* Rieši priradnie viacero premenným - neterminál stmt3 */
 Tree *stmt3()
 {
     Tree *root = NULL;
@@ -510,6 +533,7 @@ Tree *stmt3()
     return root;
 }
 
+/* rieši časť za priradením viacerým premenným (= expr1,expr2) - neterminál stmt4,5 */
 Tree *stmt4_5()
 {
     Tree *root = NULL;
@@ -526,6 +550,7 @@ Tree *stmt4_5()
     return root;
 }
 
+/* Rieši čiarky v argumentoch funckie, ktoré sú predávané ako parametre - neterminál arg_comma */
 Tree *arg_coma()
 {
     Tree *help = NULL;
@@ -557,6 +582,7 @@ Tree *arg_coma()
     return help;
 }
 
+/* Rieši termy v printe - neterminál terms */
 Tree *terms()
 {
     tok = getToken(&stack);
@@ -581,6 +607,7 @@ Tree *terms()
     }
 }
 
+/* Rieši čiarky pri termoch v printe - neterminál terms2 */
 Tree *terms2()
 {
     tok = getToken(&stack);
@@ -592,6 +619,7 @@ Tree *terms2()
     return NULL;
 }
 
+/* Pomocou aplikácie precedenčnej tabulky vytvorí podstrom s výrazom */
 Tree *expr(int precedence)
 {
     TokenPtr t = NULL;
@@ -601,7 +629,7 @@ Tree *expr(int precedence)
     char *name = NULL;
     bool ungetT = false;
 
-    // Check for invalid negative number: var:= -4
+    // Ošetrenie pre negatívne čislo: var:= -4
     if (tok->type == IDENTIF_DEF || tok->type == IDENTIF_INIT)
     {
         tmp = getToken(&stack);
@@ -647,6 +675,7 @@ Tree *expr(int precedence)
         ungetToken(&stack);
     }
 
+
     tok = getToken(&stack);
     switch (tok->type)
     {
@@ -675,20 +704,6 @@ Tree *expr(int precedence)
     case FUNC_PRINT:
         error_exit(6, "Print cannot be in expression");
     case TOKEN_MINUS:
-        //tok = getToken(&stack);
-        /* Pridanie "-" pred hodnotu */
-        /*if (tok->type == TOKEN_INT || tok->type == TOKEN_FLOAT)
-        {
-            char *buff = (char *)malloc(strlen(tok->value) + 2);
-            strcpy(buff, "-");
-            strcat(buff, tok->value);
-            free(tok->value);
-            tok->value = buff;
-        }
-        ungetToken(&stack);*/
-        //root = expr(precedence);
-        //break;
-
     case TOKEN_PLUS:
     case TOKEN_MUL:
     case TOKEN_DIV:
@@ -713,8 +728,6 @@ Tree *expr(int precedence)
         root = createLeaf(table[tok->type].node, NULL);
         expectToken(TOKEN_ROUND_LBRACKET);
         expectToken(TOKEN_ROUND_RBRACKET);
-        /*tok = getToken(&stack);
-        ungetT = true;*/
         break;
     case FUNC_LEN:
         root = createLeaf(table[tok->type].node, NULL);
@@ -875,7 +888,7 @@ Tree *expr(int precedence)
         ungetToken(&stack);
     }
 
-    // Check if two operators go after each other.
+    /* Kontrola dvoch po sebe idúcich operátorov */
     if (ungetT)
     {
         switch (tok->type)
@@ -913,10 +926,17 @@ Tree *expr(int precedence)
         }
     }
 
+    /* 
+        Pokiaľ je má aktuálny token väčšiu precedenciu ako prechádzajúci, 
+        tak funkcia rekurzívne do seba vnorí s precedenciou o 1 väčšiou
+        a tým pádom sa zísakava prednosť operátorov
+        Napríklad + má menšiu precedenciu ako *, tak tento cyklus preskočí.
+        * má väčšiu precedenciu ako +, tak sa vnorí do tohto cyklu a 
+        vytvorí sa z neho uzol v abstraktnom syntaktickom strome, pretože má presnosť pred +
+     */
     while (tok && table[tok->type].precedence >= precedence)
     {
         int op = tok->type;
-        //tok = getToken(&stack);
         help = expr(table[op].precedence + 1);
         root = createNode(table[op].node, root, help);
         ungetT = false;
@@ -949,6 +969,7 @@ void prt_ast(Tree *t)
     }
 }
 
+// TODO: vymazat
 void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
 {
     /* vykresli sktrukturu binarniho stromu */
@@ -995,6 +1016,7 @@ void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
     }
 }
 
+// TODO: vymazat
 void Print_tree(Tree *TempTree)
 {
     stdout_print("===========================================\n");

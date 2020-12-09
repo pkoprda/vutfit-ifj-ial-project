@@ -1,3 +1,9 @@
+/**
+ * Projekt: Prekladac jazyka  IFJ20 do medzikodu IFJcode20
+ * Popis: Implementacia zasobniku
+ * Autor: Daniel Paul - xpauld00
+ */
+
 #include "libmine.h"
 
 /* Inicializacia zasobniku */
@@ -6,9 +12,9 @@ void initStack(Stack *s)
     /* Inicializacia zasobniku zlyhala */
     if (s == NULL)
     {
-        // Doplnit spravny exit code
-        exit(0);
+        error_exit(INTERNAL_ERROR, "Internal error! Could not initialize stack!");
     }
+
     /* Alokovanie pamäte zasobniku */
     else
     {
@@ -18,6 +24,7 @@ void initStack(Stack *s)
     }
 }
 
+/* Zasobnik je prazdny -> funkcia vrati 0 */
 int stackEmpty(Stack *s)
 {
     return s->top == 0;
@@ -43,10 +50,6 @@ void stackPop(Stack *s)
     {
         s->top--;
     }
-    else
-    {
-        debug_print("STACK IS EMPTY!");
-    }
 }
 
 /* Vlozi prvok na vrchol zasobniku */
@@ -61,6 +64,7 @@ void stackPush(Stack *s, void *p)
     s->value[s->top++] = p;
 }
 
+/* Uvolni pamat a vyprazdni zasobnik */
 void stackFree(Stack *s)
 {
     free(s->value);
@@ -69,6 +73,7 @@ void stackFree(Stack *s)
     s->size = 0;
 }
 
+/* Otoci zasobnik */
 void stackFlip(Stack *s)
 {
     void *tmpValue;
@@ -79,19 +84,4 @@ void stackFlip(Stack *s)
         s->value[i] = s->value[j];
         s->value[j--] = tmpValue;
     }
-}
-
-void stackPrint(Stack *s, char *displayToken[])
-{
-    stdout_print("\n*************************\n");
-    for (int i = 0; i < s->top; i++)
-    {
-        TokenPtr tmp = (TokenPtr)s->value[i];
-        stdout_print("-----------------\n");
-        stdout_print("|\t%s\t|\t%s\n", displayToken[tmp->type], tmp->value);
-        stdout_print("-----------------\n");
-        UNUSED(tmp);
-        UNUSED(displayToken);
-    }
-    stdout_print("*************************\n\n");
 }

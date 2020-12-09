@@ -1,6 +1,6 @@
 /*
- * IAL - hashtable
- * Hlavickovy subor pre symtable.c 
+ * Projekt: Prekladac jazyka  IFJ20 do medzikodu IFJcode20
+ * Popis: IAL - tabulka s rozptylenymi polozkami, hlavickovy subor pre symtable.c 
  * Autori: Viliam Holik - xholik14, Pavol Babjak - xbabja03
  */
 
@@ -39,7 +39,7 @@ typedef struct FunTItem
     struct FunTItem *next;
 } FunTItem;
 
-// hashtable for functions
+// hashtable pre funkcie
 typedef FunTItem *FunTable[FTsize];
 
 void ftInit(FunTable *fun);

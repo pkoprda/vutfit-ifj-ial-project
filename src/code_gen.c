@@ -1,28 +1,41 @@
+/**
+ * Projekt: Prekladac jazyka  IFJ20 do medzikodu IFJcode20
+ * Popis: Generacia kodu
+ * Autor: Peter Koprda - xkoprd00, Daniel Paul - xpauld00,
+ *        Viliam Holik - xholik14
+ */
+
 #include "code_gen.h"
 
-int input_count = 1;
-int substr_label_cnt = 1;
+int input_count = 1;            // pocitadlo pre navestia u funkcie inputi(), inputs(), inputf()
+int substr_label_cnt = 1;       // pocitadlo pre navestia u funkcie substr()
 bool runtime_error = false;
 bool infor = false;
 
 char *function;
 int if_s, for_s;
 
+
+//// generovanie vstavanych funkcii
+// funkcia int2float()
 #define GEN_INT2FLOAT(var, symb, type)     \
     PRINT_CODE("INT2FLOAT LF@%%%s ", var); \
     generate_constant(type, symb);         \
     PRINT_NL()
 
+// funkcia float2int()
 #define GEN_FLOAT2INT(var, symb, type)     \
     PRINT_CODE("FLOAT2INT LF@%%%s ", var); \
     generate_constant(type, symb);         \
     PRINT_NL()
 
+// funkcia len()
 #define GEN_STRLEN(var, symb, type)     \
     PRINT_CODE("STRLEN LF@%%%s ", var); \
     generate_constant(type, symb);      \
     PRINT_NL();
 
+// funkcia ord()
 #define GEN_INT2CHAR(var, err, symb, type)                                         \
     PRINT_CODE("MOVE LF@%%%s int@1\n", err);                                       \
     PRINT_CODE("GT GF@%%downlimit ");                                              \
@@ -40,6 +53,7 @@ int if_s, for_s;
     PRINT_CODE("LABEL continue%%%d\n", input_count);                               \
     input_count++;
 
+// funkcia chr()
 #define GEN_STRI2INT(var, err, symb1, symb2, type1, type2)                         \
     PRINT_CODE("STRLEN GF@%%strlenMax ");                                          \
     generate_constant(type1, symb1);                                               \
@@ -61,6 +75,7 @@ int if_s, for_s;
     PRINT_CODE("LABEL continue%%%d\n", input_count);                               \
     input_count++;
 
+// funkcia substr()
 #define GEN_SUBSTR(var, err, symb1, symb2, symb3, type1, type2, type3)              \
     PRINT_CODE("STRLEN GF@%%strlenMax ");                                           \
     generate_constant(type1, symb1);                                                \
@@ -100,6 +115,7 @@ int if_s, for_s;
     input_count++;                                                                  \
     substr_label_cnt++;
 
+// funkcie inputi(), inputs(), inputf()
 #define GEN_READ(value, err, type)                                              \
     PRINT_CODE("READ LF@%%%s %s\n", value, type);                               \
     PRINT_CODE("MOVE LF@%%%s int@0\n", err);                                    \
@@ -109,10 +125,10 @@ int if_s, for_s;
     input_count++;                                                              \
     runtime_error = true;
 
+
+// vypisanie hlavicky globalnych premennych, skok na main a vypis navestia pre runtimeError
 void generate()
 {
-    stdout_print("\n======================= GENERATING CODE =======================\n");
-    //PRINT_HEADER();
     PRINT_CODE(".IFJcode20\n\n");
 
     PRINT_CODE("# Variables for built-in functions\n");
@@ -213,176 +229,201 @@ void define_for_variables(Tree *ast)
 void generate_function(Tree *ast)
 {
     int ifc, forc;
+    int type;
+
+    if (infor == true){
+        if (ast->Rptr->type == N_IDENT_DEF){
+            ast->Rptr->type = N_IDENT_INIT;
+        }
+    }
+
     switch (ast->Rptr->type)
     {
 
-    case N_IDENT_DEF:
-        if (infor == true)
-        {
-            ast->Rptr->type = N_IDENT_INIT;
-        }
-        else
-        {
-            generate_var_def(ast->Rptr);
+        case N_IDENT_DEF:
+                generate_var_def(ast->Rptr);
+                break;
+
+        case N_IDENT_INIT:
+
+            // nie je to viacnasobna inicializacia
+            if (ast->Rptr->Lptr->type != SEQ)
+            {
+                if (ast->Rptr->Rptr->type == N_INT2FLOAT)
+                {
+                    if (isdigit(ast->Rptr->Rptr->value[0]))
+                    {
+                        GEN_INT2FLOAT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_INT);
+                    }
+                    else
+                    {
+                        GEN_INT2FLOAT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);
+                    }
+                }
+                else if (ast->Rptr->Rptr->type == N_FLOAT2INT)
+                {
+                    if (isdigit(ast->Rptr->Rptr->value[0]))
+                    {
+                        GEN_FLOAT2INT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_FLOAT);
+                    }
+                    else
+                    {
+                        GEN_FLOAT2INT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);
+                    }
+                }
+                else if (ast->Rptr->Rptr->type == N_LEN)
+                {
+                    if (isdigit(ast->Rptr->Rptr->value[0]))
+                    {
+                        GEN_STRLEN(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_STRING);
+                    }
+                    else
+                    {
+                        GEN_STRLEN(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);
+                    }
+                }
+                else if (ast->Rptr->Rptr->type == N_FUNC)
+                {
+                    gen_initvar_call(ast->Rptr->Rptr, ast->Rptr->Lptr->value);
+                }
+                else if (ast->Rptr->Rptr->type != N_PLUS && ast->Rptr->Rptr->type != N_MINUS &&
+                        ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL)
+                {
+                    PRINT_CODE("MOVE LF@%%%s ", ast->Rptr->Lptr->value);
+                    gen_expr(ast->Rptr->Rptr);
+                }
+                else
+                {
+                    if(ast->Rptr->Rptr->Rptr)
+                    {
+                        if(ast->Rptr->Rptr->Rptr->type == N_IDENTIFIER)
+                        {
+                            if(getvalue(ast->Rptr->Rptr->Rptr)->type == 2)
+                            {
+                                type = N_LIT_STRING;
+                            }
+                        }
+                        else
+                        {
+                            type = ast->Rptr->Rptr->Rptr->type;
+                        }
+                        if(type == N_LIT_STRING)
+                        {
+                            PRINT_CODE("MOVE LF@%%%s string@\n", ast->Rptr->Lptr->value);
+                            gen_string_concat(ast->Rptr->Rptr, ast->Rptr->Lptr->value);
+                            break;
+                        }
+                    }
+
+                    gen_expr(ast->Rptr->Rptr);
+                    PRINT_CODE("POPS LF@%%%s\n", ast->Rptr->Lptr->value);
+                    PRINT_CODE("CLEARS\n");
+                }
+            }
+            else
+            {
+                generate_multivar_init(ast->Rptr->Lptr, ast->Rptr->Rptr);
+            }
+
             break;
-        }
 
-    case N_IDENT_INIT:
-        if (ast->Rptr->Lptr->type != SEQ)
-        {
-            if (ast->Rptr->Rptr->type == N_INT2FLOAT)
+        case N_PRINT:
+            if (ast->Rptr->Lptr)
             {
-                if (isdigit(ast->Rptr->Rptr->value[0]))
-                {
-                    GEN_INT2FLOAT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_INT);
-                }
-                else
-                {
-                    GEN_INT2FLOAT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);
-                }
+                generate_print(ast->Rptr->Lptr);
             }
-            else if (ast->Rptr->Rptr->type == N_FLOAT2INT)
-            {
-                if (isdigit(ast->Rptr->Rptr->value[0]))
-                {
-                    GEN_FLOAT2INT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_FLOAT);
-                }
-                else
-                {
-                    GEN_FLOAT2INT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);
-                }
-            }
-            else if (ast->Rptr->Rptr->type == N_LEN)
-            {
-                if (isdigit(ast->Rptr->Rptr->value[0]))
-                {
-                    GEN_STRLEN(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_STRING);
-                }
-                else
-                {
-                    GEN_STRLEN(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);
-                }
-            }
-            else if (ast->Rptr->Rptr->type == N_FUNC)
-            {
-                gen_initvar_call(ast->Rptr->Rptr, ast->Rptr->Lptr->value);
-            }
-            else if (ast->Rptr->Rptr->type != N_PLUS && ast->Rptr->Rptr->type != N_MINUS &&
-                     ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL)
-            {
-                PRINT_CODE("MOVE LF@%%%s ", ast->Rptr->Lptr->value);
-                gen_expr(ast->Rptr->Rptr);
-            }
-            else
-            {
-                gen_expr(ast->Rptr->Rptr);
-                PRINT_CODE("POPS LF@%%%s\n", ast->Rptr->Lptr->value);
-                PRINT_CODE("CLEARS\n");
-            }
-        }
-        else
-        {
-            generate_multivar_init(ast->Rptr->Lptr, ast->Rptr->Rptr);
-        }
+            break;
 
-        break;
-
-    case N_PRINT:
-        if (ast->Rptr->Lptr)
-        {
-            generate_print(ast->Rptr->Lptr);
-        }
-        break;
-
-    case N_FUNC:
-        PRINT_CODE("CREATEFRAME\n");
-        if (ast->Rptr->Lptr)
-        {
-            generate_call(ast->Rptr->Lptr);
-        }
-        PRINT_CODE("CALL $%s\n", ast->Rptr->value);
-        break;
-
-    case N_FOR:
-        /* DEFVAR KAZDU PREMENNU */
-        forc = for_s;
-        for_s++;
-        define_for_variables(ast->Rptr->Rptr);
-        if (ast->Rptr->Lptr->Rptr)
-        {
-            PRINT_CODE("DEFVAR ");
-            //for ; podm; ... {}
-            generate_constant(ast->Rptr->Lptr->Rptr->Lptr->type, ast->Rptr->Lptr->Rptr->Lptr->value);
-            PRINT_NL();
-
-            if (ast->Rptr->Lptr->Rptr->Rptr->type != N_PLUS && ast->Rptr->Lptr->Rptr->Rptr->type != N_MINUS &&
-                ast->Rptr->Lptr->Rptr->Rptr->type != N_DIV && ast->Rptr->Lptr->Rptr->Rptr->type != N_MULL &&
-                ast->Rptr->Lptr->Rptr->Rptr->type != N_FUNC)
+        case N_FUNC:
+            PRINT_CODE("CREATEFRAME\n");
+            if (ast->Rptr->Lptr)
             {
-                // a = 6 MOVE LF@%a int@6
-                PRINT_CODE("MOVE ");
+                generate_call(ast->Rptr->Lptr);
+            }
+            PRINT_CODE("CALL $%s\n", ast->Rptr->value);
+            break;
+
+        case N_FOR:
+            forc = for_s;
+            for_s++;
+            define_for_variables(ast->Rptr->Rptr);
+            /* Definícia premennej vo fore (ak existuje) */
+            if (ast->Rptr->Lptr->Rptr)
+            {
+                PRINT_CODE("DEFVAR ");
                 generate_constant(ast->Rptr->Lptr->Rptr->Lptr->type, ast->Rptr->Lptr->Rptr->Lptr->value);
-                PRINT_CODE(" ");
-                gen_expr(ast->Rptr->Lptr->Rptr->Rptr);
                 PRINT_NL();
+
+                if (ast->Rptr->Lptr->Rptr->Rptr->type != N_PLUS && ast->Rptr->Lptr->Rptr->Rptr->type != N_MINUS &&
+                    ast->Rptr->Lptr->Rptr->Rptr->type != N_DIV && ast->Rptr->Lptr->Rptr->Rptr->type != N_MULL &&
+                    ast->Rptr->Lptr->Rptr->Rptr->type != N_FUNC)
+                {
+                    PRINT_CODE("MOVE ");
+                    generate_constant(ast->Rptr->Lptr->Rptr->Lptr->type, ast->Rptr->Lptr->Rptr->Lptr->value);
+                    PRINT_CODE(" ");
+                    gen_expr(ast->Rptr->Lptr->Rptr->Rptr);
+                    PRINT_NL();
+                }
+                else
+                {
+                    gen_expr(ast->Rptr->Lptr->Rptr->Rptr);
+                    PRINT_CODE("POPS ");
+                    generate_constant(ast->Rptr->Lptr->Rptr->Lptr->type, ast->Rptr->Lptr->Rptr->Lptr->value);
+                    PRINT_NL();
+                }
             }
-            else
+            PRINT_CODE("LABEL %d%strue\n", forc, function);
+            /* Vygenerovanie podmienky */
+            generate_condition(ast->Rptr->Lptr->Lptr->Rptr, forc, 1);
+            infor = true;
+            /* Vygenerovanie tela foru */
+            generate_function(ast->Rptr->Rptr);
+            infor = false;
+            /* Vygenerovanie príkazu priradenia (ak existuje) */
+            if (ast->Rptr->Lptr->Lptr->Lptr->Rptr)
             {
-                // a= 6+5-7 POPS LF@%a
-                gen_expr(ast->Rptr->Lptr->Rptr->Rptr);
+                gen_expr(ast->Rptr->Lptr->Lptr->Lptr->Rptr->Rptr);
                 PRINT_CODE("POPS ");
-                generate_constant(ast->Rptr->Lptr->Rptr->Lptr->type, ast->Rptr->Lptr->Rptr->Lptr->value);
+                generate_constant(ast->Rptr->Lptr->Lptr->Lptr->Rptr->Lptr->type, ast->Rptr->Lptr->Lptr->Lptr->Rptr->Lptr->value);
                 PRINT_NL();
             }
-        }
-        PRINT_CODE("LABEL %d%strue\n", forc, function);
-        generate_condition(ast->Rptr->Lptr->Lptr->Rptr, forc, 1);
-        infor = true;
-        generate_function(ast->Rptr->Rptr);
-        infor = false;
-        /* a = a-1*/
-        if (ast->Rptr->Lptr->Lptr->Lptr->Rptr)
-        {
-            gen_expr(ast->Rptr->Lptr->Lptr->Lptr->Rptr->Rptr);
-            PRINT_CODE("POPS ");
-            generate_constant(ast->Rptr->Lptr->Lptr->Lptr->Rptr->Lptr->type, ast->Rptr->Lptr->Lptr->Lptr->Rptr->Lptr->value);
+            PRINT_CODE("JUMP %d%strue\n", forc, function);
+            PRINT_CODE("LABEL %d%sfalse\n", forc, function);
+
+            break;
+
+        case N_IF:
+            ifc = if_s;
+            if_s++;
+
+            /* Vygenerovanie podmienky ifu */
+            generate_condition(ast->Rptr->Lptr->Rptr, ifc, 0);
+            /* Vygenerovanie tela ifu */
+            if (ast->Rptr->Rptr->Rptr)
+            {
+                generate_function(ast->Rptr->Rptr->Rptr);
+            }
+            PRINT_CODE("JUMP %s%dtrue\n", function, ifc);
+            PRINT_CODE("LABEL %s%dfalse", function, ifc);
             PRINT_NL();
-        }
-        PRINT_CODE("JUMP %d%strue\n", forc, function);
-        PRINT_CODE("LABEL %d%sfalse\n", forc, function);
+            /* Vygenerovanie tela elsu */
+            if (ast->Rptr->Rptr->Lptr)
+            {
+                generate_function(ast->Rptr->Rptr->Lptr);
+            }
+            PRINT_CODE("LABEL %s%dtrue", function, ifc);
+            PRINT_NL();
+            break;
 
-        break;
+        case N_RETURN:
+            if (ast->Rptr->Lptr)
+            {
+                generate_return(ast->Rptr->Lptr);
+            }
+            break;
 
-    case N_IF:
-        /* Vyries condition, ktora je sirsi expression */
-        ifc = if_s;
-        if_s++;
-
-        generate_condition(ast->Rptr->Lptr->Rptr, ifc, 0);
-        if (ast->Rptr->Rptr->Rptr)
-        {
-            generate_function(ast->Rptr->Rptr->Rptr);
-        }
-        PRINT_CODE("JUMP %s%dtrue\n", function, ifc);
-        PRINT_CODE("LABEL %s%dfalse", function, ifc);
-        PRINT_NL();
-        if (ast->Rptr->Rptr->Lptr)
-        {
-            generate_function(ast->Rptr->Rptr->Lptr);
-        }
-        PRINT_CODE("LABEL %s%dtrue", function, ifc);
-        PRINT_NL();
-        break;
-
-    case N_RETURN:
-        if (ast->Rptr->Lptr)
-        {
-            generate_return(ast->Rptr->Lptr);
-        }
-        break;
-
-    default:
-        break;
+        default:
+            break;
     }
 
     if (!ast->Lptr)
@@ -392,10 +433,11 @@ void generate_function(Tree *ast)
     generate_function(ast->Lptr);
 }
 
-// type: 0 - IF, 1 - FOR
+/* Vygenerovanie podmienky pre if alebo else, type 0 = if, count = zanorenie ifu/foru  */
 void generate_condition(Tree *ast, int count, int type)
 {
 
+    /* Vyriešenie výrazov v podmienke */
     if (ast->Lptr->type != N_PLUS && ast->Lptr->type != N_MINUS &&
         ast->Lptr->type != N_DIV && ast->Lptr->type != N_MULL &&
         ast->Lptr->type != N_FUNC)
@@ -426,188 +468,197 @@ void generate_condition(Tree *ast, int count, int type)
 
     switch (ast->type)
     {
-    case N_GREATER:
-        PRINT_CODE("GT GF@!compvar GF@!condvar1 GF@!condvar2\n");
-        if (type == 0)
-        {
-            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
-        }
-        else
-        {
-            //b:=0 b>2
-            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
-        }
-        break;
-    case N_LESS:
-        PRINT_CODE("LT GF@!compvar GF@!condvar1 GF@!condvar2\n");
-        if (type == 0)
-        {
-            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
-        }
-        else
-        {
-            // b:= 3  b < 1
-            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
-        }
-        break;
+        case N_GREATER:
+            PRINT_CODE("GT GF@!compvar GF@!condvar1 GF@!condvar2\n");
+            if (type == 0)
+            {
+                PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
+            }
+            break;
+        case N_LESS:
+            PRINT_CODE("LT GF@!compvar GF@!condvar1 GF@!condvar2\n");
+            if (type == 0)
+            {
+                PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
+            }
+            break;
 
-    case N_EQUAL:
-        PRINT_CODE("EQ GF@!compvar GF@!condvar1 GF@!condvar2\n");
-        if (type == 0)
-        {
-            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
-        }
-        else
-        {
-            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
-        }
-        break;
-    case N_NOT_EQUAL:
-        PRINT_CODE("EQ GF@!compvar GF@!condvar1 GF@!condvar2\n");
-        if (type == 0)
-        {
-            PRINT_CODE("JUMPIFEQ %s%dfalse GF@!compvar bool@true\n", function, count);
-        }
-        else
-        {
-            PRINT_CODE("JUMPIFEQ %d%sfalse GF@!compvar bool@true\n", count, function);
-        }
-        break;
-    case N_EQ_GREATER:
-        PRINT_CODE("GT GF@!compvar GF@!condvar1 GF@!condvar2\n");
-        if (type == 0)
-        {
-            PRINT_CODE("JUMPIFEQ %s%dfalsee GF@!compvar bool@true\n", function, count);
-        }
-        else
-        {
-            PRINT_CODE("JUMPIFEQ %d%sfalsee GF@!compvar bool@true\n", count, function);
-        }
-        PRINT_CODE("EQ GF@!compvar GF@!condvar1 GF@!condvar2\n");
-        if (type == 0)
-        {
-            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
-        }
-        else
-        {
-            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
-        }
+        case N_EQUAL:
+            PRINT_CODE("EQ GF@!compvar GF@!condvar1 GF@!condvar2\n");
+            if (type == 0)
+            {
+                PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
+            }
+            break;
+        case N_NOT_EQUAL:
+            PRINT_CODE("EQ GF@!compvar GF@!condvar1 GF@!condvar2\n");
+            if (type == 0)
+            {
+                PRINT_CODE("JUMPIFEQ %s%dfalse GF@!compvar bool@true\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("JUMPIFEQ %d%sfalse GF@!compvar bool@true\n", count, function);
+            }
+            break;
+        case N_EQ_GREATER:
+            PRINT_CODE("GT GF@!compvar GF@!condvar1 GF@!condvar2\n");
+            if (type == 0)
+            {
+                PRINT_CODE("JUMPIFEQ %s%dfalsee GF@!compvar bool@true\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("JUMPIFEQ %d%sfalsee GF@!compvar bool@true\n", count, function);
+            }
+            PRINT_CODE("EQ GF@!compvar GF@!condvar1 GF@!condvar2\n");
+            if (type == 0)
+            {
+                PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
+            }
 
-        if (type == 0)
-        {
-            PRINT_CODE("LABEL %s%dfalsee\n", function, count);
-        }
-        else
-        {
-            PRINT_CODE("LABEL %d%sfalsee\n", count, function);
-        }
+            if (type == 0)
+            {
+                PRINT_CODE("LABEL %s%dfalsee\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("LABEL %d%sfalsee\n", count, function);
+            }
 
-        break;
+            break;
 
-    case N_EQ_LESS:
-        PRINT_CODE("LT GF@!compvar GF@!condvar1 GF@!condvar2\n");
-        if (type == 0)
-        {
-            PRINT_CODE("JUMPIFEQ %s%dfalsee GF@!compvar bool@true\n", function, count);
-        }
-        else
-        {
-            PRINT_CODE("JUMPIFEQ %d%sfalsee GF@!compvar bool@true\n", count, function);
-        }
+        case N_EQ_LESS:
+            PRINT_CODE("LT GF@!compvar GF@!condvar1 GF@!condvar2\n");
+            if (type == 0)
+            {
+                PRINT_CODE("JUMPIFEQ %s%dfalsee GF@!compvar bool@true\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("JUMPIFEQ %d%sfalsee GF@!compvar bool@true\n", count, function);
+            }
 
-        PRINT_CODE("EQ GF@!compvar GF@!condvar1 GF@!condvar2\n");
-        if (type == 0)
-        {
-            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
-        }
-        else
-        {
-            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
-        }
+            PRINT_CODE("EQ GF@!compvar GF@!condvar1 GF@!condvar2\n");
+            if (type == 0)
+            {
+                PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
+            }
 
-        if (type == 0)
-        {
-            PRINT_CODE("LABEL %s%dfalsee\n", function, count);
-        }
-        else
-        {
-            PRINT_CODE("LABEL %d%sfalsee\n", count, function);
-        }
-        break;
-    default:
-        break;
+            if (type == 0)
+            {
+                PRINT_CODE("LABEL %s%dfalsee\n", function, count);
+            }
+            else
+            {
+                PRINT_CODE("LABEL %d%sfalsee\n", count, function);
+            }
+            break;
+        default:
+            break;
     }
 }
 
 void generate_var_def(Tree *ast)
 {
-    PRINT_CODE("DEFVAR LF@%%%s", ast->Lptr->value);
-    PRINT_NL();
+    PRINT_CODE("DEFVAR LF@%%%s\n", ast->Lptr->value);
+
     switch (ast->Rptr->type)
     {
-    case N_LIT_INT:
-    case N_LIT_STRING:
-    case N_LIT_FLOAT:
-    case N_IDENTIFIER:
-        PRINT_CODE("MOVE LF@%%%s ", ast->Lptr->value);
-        generate_constant(ast->Rptr->type, ast->Rptr->value);
-        PRINT_NL();
-        break;
+        case N_LIT_INT:
+        case N_LIT_STRING:
+        case N_LIT_FLOAT:
+        case N_IDENTIFIER:
+            PRINT_CODE("MOVE LF@%%%s ", ast->Lptr->value);
+            generate_constant(ast->Rptr->type, ast->Rptr->value);
+            PRINT_NL();
+            break;
 
-    case N_FUNC:
-        PRINT_CODE("CREATEFRAME\n");
-        if (ast->Rptr->Lptr)
-        {
-            generate_call(ast->Rptr->Lptr);
-        }
-        PRINT_CODE("CALL $%s\n", ast->Rptr->value);
-        PRINT_CODE("MOVE LF@%%%s TF@%%retval1\n", ast->Lptr->value);
-        break;
+        case N_FUNC:
+            PRINT_CODE("CREATEFRAME\n");
+            if (ast->Rptr->Lptr)
+            {
+                generate_call(ast->Rptr->Lptr);
+            }
+            PRINT_CODE("CALL $%s\n", ast->Rptr->value);
+            PRINT_CODE("MOVE LF@%%%s TF@%%retval1\n", ast->Lptr->value);
+            break;
 
-    case N_PLUS:
-    case N_MINUS:
-    case N_MULL:
-    case N_DIV:
-        gen_expr(ast->Rptr);
-        PRINT_CODE("POPS LF@%%%s\n", ast->Lptr->value);
-        PRINT_CODE("CLEARS\n");
-        break;
+        case N_PLUS:
+            if(ast->Rptr->Rptr && ast->Rptr->Rptr->type == N_LIT_STRING)
+            {
+                PRINT_CODE("MOVE LF@%%%s string@\n", ast->Lptr->value);
+                gen_string_concat(ast->Rptr, ast->Lptr->value);
+                break;
+            }
+            gen_expr(ast->Rptr);
+            PRINT_CODE("POPS LF@%%%s\n", ast->Lptr->value);
+            PRINT_CODE("CLEARS\n");
+            break;
 
-    case N_INT2FLOAT:
-        if (isdigit(ast->Rptr->value[0]))
-        {
-            GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value, N_LIT_INT);
-        }
-        else
-        {
-            GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
-        }
-        //GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value);
-        break;
+        case N_MINUS:
+        case N_MULL:
+        case N_DIV:
+            gen_expr(ast->Rptr);
+            PRINT_CODE("POPS LF@%%%s\n", ast->Lptr->value);
+            PRINT_CODE("CLEARS\n");
+            break;
 
-    case N_FLOAT2INT:
-        if (isdigit(ast->Rptr->value[0]))
-        {
-            GEN_FLOAT2INT(ast->Lptr->value, ast->Rptr->value, N_LIT_FLOAT);
-        }
-        else
-        {
-            GEN_FLOAT2INT(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
-        }
-        break;
+        case N_INT2FLOAT:
+            if (isdigit(ast->Rptr->value[0]))
+            {
+                GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value, N_LIT_INT);
+            }
+            else
+            {
+                GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
+            }
+            break;
 
-    case N_LEN:
-        if (isdigit(ast->Rptr->value[0]))
-        {
-            GEN_STRLEN(ast->Lptr->value, ast->Rptr->value, N_LIT_STRING);
+        case N_FLOAT2INT:
+            if (isdigit(ast->Rptr->value[0]))
+            {
+                GEN_FLOAT2INT(ast->Lptr->value, ast->Rptr->value, N_LIT_FLOAT);
+            }
+            else
+            {
+                GEN_FLOAT2INT(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
+            }
+            break;
+
+        case N_LEN:
+            if (isdigit(ast->Rptr->value[0]))
+            {
+                GEN_STRLEN(ast->Lptr->value, ast->Rptr->value, N_LIT_STRING);
+            }
+            else
+            {
+                GEN_STRLEN(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
+            }
+            break;
         }
-        else
-        {
-            GEN_STRLEN(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
-        }
-        break;
-    }
 }
+
 
 void generate_multivar_init(Tree *vars, Tree *expr)
 {
@@ -615,6 +666,17 @@ void generate_multivar_init(Tree *vars, Tree *expr)
     switch (expr->Rptr->type)
     {
     case N_PLUS:
+        if(expr->Rptr->Rptr && expr->Rptr->Rptr->type == N_LIT_STRING)
+        {
+            PRINT_CODE("MOVE LF@%%%s string@\n", vars->Rptr->value);
+            gen_string_concat(expr->Rptr, vars->Rptr->value);
+            break;
+        }
+        gen_expr(expr->Rptr);
+        PRINT_CODE("POPS LF@%%%s\n", vars->Rptr->value);
+        PRINT_CODE("CLEARS\n");
+        break;
+
     case N_MINUS:
     case N_MULL:
     case N_DIV:
@@ -713,6 +775,7 @@ void generate_multivar_init(Tree *vars, Tree *expr)
     generate_multivar_init(vars->Lptr, expr->Lptr);
 }
 
+/* Vygeneruje výsledok výrazu */
 void gen_expr(Tree *ast)
 {
     switch (ast->type)
@@ -725,6 +788,7 @@ void gen_expr(Tree *ast)
         PRINT_NL();
         break;
     case N_PLUS:
+        
     case N_MINUS:
     case N_MULL:
     case N_DIV:
@@ -759,6 +823,7 @@ SymTItem *getvalue(Tree *ast)
     return sItem;
 }
 
+/* Vypočíta výraz pomocou zásobníka a postorder prechodom podstromom AST s výrazom */
 void calculate_expr(Tree *ast)
 {
     int type;
@@ -782,10 +847,10 @@ void calculate_expr(Tree *ast)
         break;
     case N_DIV:
 
-        //if(ast->Lptr != NULL){
         calculate_expr(ast->Lptr);
         calculate_expr(ast->Rptr);
 
+        /* Vyriešenie inštrukcie delenia pre int/float */
         if (ast->Lptr->type == N_IDENTIFIER)
         {
             if (getvalue(ast->Lptr)->type == 1)
@@ -801,6 +866,7 @@ void calculate_expr(Tree *ast)
         {
             type = ast->Lptr->type;
         }
+        /* Ošetrenie delenia nulou */
         PRINT_CODE("JUMPIFEQ runtimeError ");
         generate_constant(ast->Rptr->type, ast->Rptr->value);
         if (type == N_LIT_INT)
@@ -830,6 +896,21 @@ void calculate_expr(Tree *ast)
         PRINT_NL();
         return;
     }
+}
+
+void gen_string_concat(Tree *ast, char *id)
+{
+    PRINT_CODE("CONCAT LF@%%%s ", id);
+    generate_constant(ast->Rptr->type, ast->Rptr->value);
+    PRINT_CODE(" LF@%%%s\n", id);
+    if (ast->Lptr->type == N_LIT_STRING)
+    {
+        PRINT_CODE("CONCAT LF@%%%s ", id);
+        generate_constant(ast->Lptr->type, ast->Lptr->value);
+        PRINT_CODE(" LF@%%%s\n", id);
+        return;
+    }
+    gen_string_concat(ast->Lptr, id);
 }
 
 void generate_constant(int type, char *value)

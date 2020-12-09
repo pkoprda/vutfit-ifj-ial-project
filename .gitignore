@@ -62,6 +62,7 @@ log
 *.sh
 
 bin/ifj20
-tests/mojtest.go
+rozdeleni
+doc/llgrammartable.xls
+tests/mytest.go
 tests/test.go
-out.ifjcode20

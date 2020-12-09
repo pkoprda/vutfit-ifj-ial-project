@@ -1,21 +1,12 @@
 /**
- * Projekt: Prekladač jazyka  IFJ20 do medzikódu IFJcode20
- * Popis: Implementácia lexikálnej analýzy
+ * Projekt: Prekladac jazyka  IFJ20 do medzikódu IFJcode20
+ * Popis: Implementacia lexikalnej analýzy
  * Autor: Peter Koprda - xkoprd00
  */
 
 #include "libmine.h"
 
 Stack stack;
-
-// TODO: vymazat
-char *displayToken[] = {
-    "identifier", ":=", "=",
-    "INT", "FLOAT", "STR",
-    "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=", "EOL",
-    ",", ";", "(", ")", "{", "}",
-    "package", "if", "else", "for", "func", "int", "float64", "string", "return",
-    "main", "inputs", "inputi", "inputf", "print", "int2float", "float2int", "len", "substr", "ord", "chr"};
 
 int lexer()
 {
@@ -44,7 +35,6 @@ int lexer()
             // novy riadok
             else if (c == '\n')
             {
-                debug_print("EOL");
                 stackPush(&stack, initToken(TOKEN_EOL, NULL));
             }
 
@@ -52,7 +42,6 @@ int lexer()
             else if (c == '\t' || c == ' ')
             {
                 ;
-                //debug_print("WHITESPACE");
             }
 
             // delenie alebo komentar
@@ -166,6 +155,7 @@ int lexer()
                 c = getc(stdin);
                 if (c == '=')
                 {
+                    // nerovna sa
                     stackPush(&stack, initToken(TOKEN_NOT_EQUAL, NULL));
                 }
                 else
@@ -191,7 +181,6 @@ int lexer()
             // nezname znaky
             else
             {
-                debug_print("\n%c %d", c, c);
                 error_exit(LEX_ERROR, "Lexical error!");
             }
 
@@ -242,6 +231,7 @@ int lexer()
             }
             break;
 
+        // identifikatory
         case STATE_IDENTIF:
 
             while (1)
@@ -258,7 +248,7 @@ int lexer()
                 }
             }
 
-            // keywordy a funkcie
+            // klucove slova a funkcie
             if (MIN_LEN_KEYWORD <= strlen(buffer->str) && strlen(buffer->str) <= MAX_LEN_KEYWORD)
             {
                 if (!strcmp(buffer->str, "else"))
@@ -305,21 +295,18 @@ int lexer()
                 {
                     // identifikator
                     stackPush(&stack, initToken(TOKEN_IDENTIF, my_strdup(buffer->str)));
-                    debug_print("IDENTIFIER: %s", buffer->str);
                     clearBuffer(buffer);
                     freeBuffer(buffer);
                     buffer = &bufferHelp;
                     stav = STATE_START;
                     break;
                 }
-                debug_print("KEYWORD: %s", buffer->str);
             }
 
             // identifikator
             else
             {
                 stackPush(&stack, initToken(TOKEN_IDENTIF, my_strdup(buffer->str)));
-                debug_print("IDENTIFIER: %s", buffer->str);
             }
             clearBuffer(buffer);
             freeBuffer(buffer);
@@ -327,12 +314,14 @@ int lexer()
             stav = STATE_START;
             break;
 
+        // cislo - int alebo float64
         case STATE_NUMBER:
 
             if (isdigit(c))
             {
                 if (firstDigit == '0')
                 {
+                    // iba jednociferne cisla mozu zacinat 0
                     error_exit(LEX_ERROR, "Lexical error!");
                 }
                 addChar(buffer, c);
@@ -349,17 +338,18 @@ int lexer()
                 }
                 else
                 {
+                    // desatinna cast moze zacinat iba cislom
                     error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
             else if (c == 'e' || c == 'E')
             {
+                // exponent v desatinnej casti
                 stav = STATE_EXPONENT_NUMBER;
             }
             else
             {
                 ungetc(c, stdin);
-                debug_print("INT: %s", buffer->str);
                 stackPush(&stack, initToken(TOKEN_INT, my_strdup(buffer->str)));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
@@ -369,6 +359,7 @@ int lexer()
 
             break;
 
+        // desatinne cislo
         case STATE_FLOAT_NUMBER:
             if (isdigit(c))
             {
@@ -383,7 +374,6 @@ int lexer()
             else
             {
                 ungetc(c, stdin);
-                debug_print("FLOAT: %s", buffer->str);
                 stackPush(&stack, initToken(TOKEN_FLOAT, my_strdup(buffer->str)));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
@@ -392,6 +382,7 @@ int lexer()
             }
             break;
 
+        // desatinne cislo s exponentom
         case STATE_EXPONENT_NUMBER:
             if (c == '+' || c == '-')
             {
@@ -420,6 +411,7 @@ int lexer()
             }
             break;
 
+        // koniec desatinneho cisla s exponentom
         case STATE_EXPONENT_NUMBER_FINAL:
             if (isdigit(c))
             {
@@ -429,7 +421,6 @@ int lexer()
             else
             {
                 ungetc(c, stdin);
-                debug_print("FLOAT: %s", buffer->str);
                 stackPush(&stack, initToken(TOKEN_FLOAT, buffer->str));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
@@ -438,16 +429,16 @@ int lexer()
             }
             break;
 
+        // reťazec
         case STATE_STRING:
             while (1)
             {
                 c = getc(stdin);
 
-                // koniec stringu
+                // koniec reťazca
                 if (c == '"')
                 {
                     addChar(buffer, c);
-                    debug_print("STRING: %s", buffer->str);
                     stackPush(&stack, initToken(TOKEN_STRING, my_strdup(buffer->str)));
                     clearBuffer(buffer);
                     freeBuffer(buffer);
@@ -527,6 +518,5 @@ int lexer()
     }
 
     stackFlip(&stack);
-    stackPrint(&stack, displayToken);
     return SCANNER_OK;
 }

@@ -1,3 +1,9 @@
+/**
+ * Projekt: Prekladac jazyka  IFJ20 do medzikodu IFJcode20
+ * Popis: Implementacia kniznice pre spracovanie retazcov
+ * Autori: Peter Koprda - xkoprd00, Daniel Paul - xpauld00
+ */
+
 #include "libmine.h"
 
 char *my_strdup(const char *str)
@@ -58,7 +64,6 @@ TokenPtr getToken(Stack *s)
 {
     if (stackEmpty(s))
     {
-        debug_print("GET TOKEN RETURNED NULL");
         return NULL;
     }
     TokenPtr tmp = (TokenPtr)stackTop(s);
@@ -66,6 +71,7 @@ TokenPtr getToken(Stack *s)
     return tmp;
 }
 
+/* Funkcia, ktorá skontroluje, či sa ďalší token riadi pravidlom gramatiky */
 void expectToken(int type)
 {
     if (stackEmpty(&stack))
@@ -78,11 +84,14 @@ void expectToken(int type)
     }
 }
 
+/* Vytvorenie uzlu v abstraktnom syntaktickom strome */
 Tree *createNode(int type, Tree *Lptr, Tree *Rptr)
 {
     Tree *tree = malloc(sizeof(struct Tree));
-    //if (tree == NULL)
-    //error_exit(99, "Failed to allocate memory");
+    if (tree == NULL)
+    {
+        error_exit(INTERNAL_ERROR, "Failed to allocate memory");
+    }
     tree->type = type;
     tree->value = NULL;
     tree->Lptr = Lptr;
@@ -90,11 +99,14 @@ Tree *createNode(int type, Tree *Lptr, Tree *Rptr)
     return tree;
 }
 
+/* Vytvorenie v abstraktnom syntaktickom strome */
 Tree *createLeaf(int type, char *value)
 {
     Tree *tree = malloc(sizeof(struct Tree));
-    //if (tree == NULL)
-    //error_exit(99, "Failed to allocate memory");
+    if (tree == NULL)
+    {
+        error_exit(INTERNAL_ERROR, "Failed to allocate memory");
+    }
     tree->type = type;
     tree->value = value;
     tree->Lptr = NULL;
@@ -102,6 +114,9 @@ Tree *createLeaf(int type, char *value)
     return tree;
 }
 
+/**
+ * Funkcia prevzana a upravená zo stránok IFJ
+ */
 void initString(string *s)
 {
     s->str = (char *)malloc(sizeof(char) * SIZE_STRING_INC);
@@ -114,6 +129,9 @@ void initString(string *s)
     s->allocSize = SIZE_STRING_INC;
 }
 
+/**
+ * Funkcia prevzana a upravená zo stránok IFJ
+ */
 string *addChar(string *s, char c)
 {
     if (s->length + 1 >= s->allocSize)
