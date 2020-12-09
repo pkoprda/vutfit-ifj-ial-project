@@ -8,6 +8,7 @@
 
 
 int getIDtype(char *function, char *ID, int forcnt, int ifcnt, int hide);
+SymTItem *getvalue(Tree *ast);
 
 void generate_label(Tree *ast);
 void generate_function(Tree *ast);
@@ -29,3 +30,5 @@ void generate_return(Tree *ast);
 void generate_return_types(Tree *ast);
 
 
+void input_errvalue();
+void input_okvalue();

@@ -1,5 +1,6 @@
 #include "code_gen.h"
 
+int input_count = 1;
 
 #define GEN_INT2FLOAT(var, symb)                \
     if(isdigit(symb[0])) type = N_LIT_INT;      \
@@ -40,6 +41,14 @@
     generate_constant(type2, symb2);            \
     PRINT_NL();
 
+#define GEN_READ(value, err, type)                                               \
+    PRINT_CODE("READ LF@%%%s %s\n", value, type);                                \
+    PRINT_CODE("MOVE LF@%%%s int@0\n", err);                                     \
+    PRINT_CODE("JUMPIFNEQ continue%%%d LF@%%%s nil@nil\n", input_count, value);  \
+    PRINT_CODE("MOVE LF@%%%s int@1\n", err);                                     \
+    PRINT_CODE("LABEL continue%%%d\n", input_count);                             \
+    input_count++;
+
 char *function;
 int if_s,for_s;
 
@@ -49,14 +58,14 @@ void generate()
     //PRINT_HEADER();
     PRINT_CODE(".IFJcode20\n\n");
     
-    PRINT_CODE("DEFVAR GF@!true\n");
-    PRINT_CODE("MOVE GF@!true bool@true\n");
     PRINT_CODE("DEFVAR GF@!compvar\n");
     
     PRINT_CODE("JUMP $$main\n");
     PRINT_NL();
+
     generate_label(ast->Rptr);
 }
+
 
 void generate_label(Tree *ast)
 {
@@ -261,9 +270,9 @@ void generate_condition(Tree *ast, int count,  int type){
         //!compvar a true budu globalne variables
         // JUMPIFNEQ labelfalse !compvar !true
         if (type == 0){
-            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, count);
+            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
         } else {
-            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar GF@!true\n", count, function);
+            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
         }
         break;
     case N_LESS:
@@ -274,9 +283,9 @@ void generate_condition(Tree *ast, int count,  int type){
         PRINT_NL();
         //!compvar a true budu globalne variables
         if (type == 0){
-            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, count);
+            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
         } else {
-            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar GF@!true\n", count, function);
+            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
         }
         break;
 
@@ -288,9 +297,9 @@ void generate_condition(Tree *ast, int count,  int type){
         PRINT_NL();
         //!compvar a true budu globalne variables
         if (type == 0){
-            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar GF@!true\n", function, count);
+            PRINT_CODE("JUMPIFNEQ %s%dfalse GF@!compvar bool@true\n", function, count);
         } else {
-            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar GF@!true\n", count, function);
+            PRINT_CODE("JUMPIFNEQ %d%sfalse GF@!compvar bool@true\n", count, function);
         }
         break;
     case N_NOT_EQUAL:
@@ -301,9 +310,9 @@ void generate_condition(Tree *ast, int count,  int type){
         PRINT_NL();
         //!compvar a true budu globalne variables
         if (type == 0){
-            PRINT_CODE("JUMPIFEQ %s%dfalse GF@!compvar GF@!true\n", function, count);
+            PRINT_CODE("JUMPIFEQ %s%dfalse GF@!compvar bool@true\n", function, count);
         } else {
-            PRINT_CODE("JUMPIFEQ %d%sfalse GF@!compvar GF@!true\n", count, function);
+            PRINT_CODE("JUMPIFEQ %d%sfalse GF@!compvar bool@true\n", count, function);
         }
         break;
     
@@ -377,19 +386,19 @@ void generate_multivar_init(Tree *vars, Tree *expr)
             break;
 
         case N_INPUTI:
-            PRINT_CODE("READ LF@%%%s int\n", vars->Rptr->value);
+            GEN_READ(vars->Rptr->value, vars->Lptr->Rptr->value, "int");
             if(!vars->Lptr->Lptr) return;
             generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
             break;
 
         case N_INPUTS:
-            PRINT_CODE("READ LF@%%%s string\n", vars->Rptr->value);
+            GEN_READ(vars->Rptr->value, vars->Lptr->Rptr->value, "string");
             if(!vars->Lptr->Lptr) return;
             generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
             break;
 
         case N_INPUTF:
-            PRINT_CODE("READ LF@%%%s float\n", vars->Rptr->value);
+            GEN_READ(vars->Rptr->value, vars->Lptr->Rptr->value, "float");
             if(!vars->Lptr->Lptr) return;
             generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
             break;
@@ -455,14 +464,16 @@ int getIDtype2(char *function, char *ID, int forcnt, int ifcnt, int hide){
     return sItem->type;
 }
 
-char *getvalue(Tree *ast){
+SymTItem *getvalue(Tree *ast){
     FunTItem *fItem = ftSearch(ft, function); 
     SymTItem *sItem = stSearch(fItem->sym, ast->value);
-    return sItem->value;
+    return sItem;
 }
 
 // 6+4*2-1+8-4+2+6-8
 void calculate_expr(Tree *ast){
+    int type;
+
     switch (ast->type){
         case N_PLUS:
             calculate_expr(ast->Lptr);
@@ -480,12 +491,30 @@ void calculate_expr(Tree *ast){
             PRINT_CODE("MULS\n");
             break;
         case N_DIV:
+
             //if(ast->Lptr != NULL){
             calculate_expr(ast->Lptr);
             calculate_expr(ast->Rptr);
-            /* CHECK PRE INT A FLOAT */
-            PRINT_CODE("DIVS\n");
-            //}
+
+            if(ast->Lptr->type == N_IDENTIFIER)
+            {
+                if(getvalue(ast->Lptr)->type == 1){
+                    type = N_LIT_INT;
+                } else{
+                    type = N_LIT_FLOAT;
+                }
+            }
+            else{
+                type = ast->Lptr->type;
+            }
+           
+            if(type == N_LIT_FLOAT){
+                PRINT_CODE("DIVS\n");
+            }
+            else if(type == N_LIT_INT){
+                PRINT_CODE("IDIVS\n");
+            }
+
             break;
         case N_LIT_INT:
         case N_LIT_FLOAT:
