@@ -1,45 +1,105 @@
 #include "code_gen.h"
 
 int input_count = 1;
+int substr_label_cnt = 1;
+bool runtime_error = false;
 
-#define GEN_INT2FLOAT(var, symb)                \
-    if(isdigit(symb[0])) type = N_LIT_INT;      \
-    else type = N_IDENTIFIER;                   \
+char *function;
+int if_s,for_s;
+
+#define GEN_INT2FLOAT(var, symb, type)          \
     PRINT_CODE("INT2FLOAT LF@%%%s ", var);      \
     generate_constant(type, symb);              \
     PRINT_NL()
 
-#define GEN_FLOAT2INT(var, symb)                \
-    if(isdigit(symb[0])) type = N_LIT_FLOAT;    \
-    else type = N_IDENTIFIER;                   \
+#define GEN_FLOAT2INT(var, symb, type)          \
     PRINT_CODE("FLOAT2INT LF@%%%s ", var);      \
     generate_constant(type, symb);              \
     PRINT_NL()
 
-#define GEN_STRLEN(var, symb)                   \
-    if(symb[0] == '"') type = N_LIT_STRING;     \
-    else type = N_IDENTIFIER;                   \
+#define GEN_STRLEN(var, symb, type)             \
     PRINT_CODE("STRLEN LF@%%%s ", var);         \
     generate_constant(type, symb);              \
     PRINT_NL();
 
-#define GEN_INT2CHAR(var, symb)                 \
-    if(isdigit(symb[0])) type = N_LIT_INT;      \
-    else type = N_IDENTIFIER;                   \
+  
+#define GEN_INT2CHAR(var, err, symb, type)      \
+    PRINT_CODE("MOVE LF@%%%s int@1\n", err);    \
+    PRINT_CODE("GT GF@%%downlimit ");           \
+    generate_constant(type, symb);              \
+    PRINT_CODE(" int@-1\n");                    \
+    PRINT_CODE("LT GF@%%toplimit ");            \
+    generate_constant(type, symb);              \
+    PRINT_CODE(" int@256\n");                   \
+    PRINT_CODE("AND GF@%%inInterval GF@%%downlimit GF@%%toplimit\n");               \
+    PRINT_CODE("JUMPIFEQ continue%%%d GF@%%inInterval bool@false\n", input_count);  \
+    PRINT_CODE("MOVE LF@%%%s int@0\n", err);    \
     PRINT_CODE("INT2CHAR LF@%%%s ", var);       \
     generate_constant(type, symb);              \
-    PRINT_NL();
+    PRINT_NL();                                 \
+    PRINT_CODE("LABEL continue%%%d\n", input_count);                                \
+    input_count++;
 
-#define GEN_STRI2INT(var, symb1, symb2)         \
-    if(symb1[0] == '"') type1 = N_LIT_STRING;   \
-    else type1 = N_IDENTIFIER;                  \
-    if(isdigit(symb2[0])) type2 = N_LIT_INT     \
-    else type2 = N_IDENTIFIER;                  \
+#define GEN_STRI2INT(var, err, symb1, symb2, type1, type2)         \
+    PRINT_CODE("STRLEN GF@%%strlenMax ");          \
+    generate_constant(type1, symb1);            \
+    PRINT_CODE("\nMOVE LF@%%%s int@1\n", err);  \
+    PRINT_CODE("GT GF@%%downlimit ");           \
+    generate_constant(type2, symb2);            \
+    PRINT_CODE(" int@-1\n");                    \
+    PRINT_CODE("LT GF@%%toplimit ");            \
+    generate_constant(type2, symb2);            \
+    PRINT_CODE(" GF@%%strlenMax\n");            \
+    PRINT_CODE("AND GF@%%inInterval GF@%%downlimit GF@%%toplimit\n");               \
+    PRINT_CODE("JUMPIFEQ continue%%%d GF@%%inInterval bool@false\n", input_count);  \
+    PRINT_CODE("MOVE LF@%%%s int@0\n", err);    \
     PRINT_CODE("STRI2INT LF@%%%s ", var);       \
     generate_constant(type1, symb1);            \
     PRINT_CODE(" ");                            \
     generate_constant(type2, symb2);            \
-    PRINT_NL();
+    PRINT_NL();                                 \
+    PRINT_CODE("LABEL continue%%%d\n", input_count);                                \
+    input_count++;
+
+#define GEN_SUBSTR(var, err, symb1, symb2, symb3, type1, type2, type3)           \
+    PRINT_CODE("STRLEN GF@%%strlenMax ");           \
+    generate_constant(type1, symb1);                \
+    PRINT_CODE("\nMOVE LF@%%%s int@1\n", err);      \
+    PRINT_CODE("GT GF@%%downlimit ");               \
+    generate_constant(type2, symb2);                \
+    PRINT_CODE(" int@-1\n");                        \
+    PRINT_CODE("LT GF@%%toplimit ");                \
+    generate_constant(type2, symb2);                \
+    PRINT_CODE(" GF@%%strlenMax\n");                \
+    PRINT_CODE("AND GF@%%inInterval GF@%%downlimit GF@%%toplimit\n");               \
+    PRINT_CODE("GT GF@%%downlimit ");               \
+    generate_constant(type3, symb3);                \
+    PRINT_CODE(" int@-1\n");                        \
+    PRINT_CODE("AND GF@%%inInterval GF@%%downlimit GF@%%inInterval\n");               \
+    PRINT_CODE("JUMPIFEQ continue%%%d GF@%%inInterval bool@false\n", input_count);  \
+    PRINT_CODE("MOVE LF@%%%s int@0\n", err);        \
+    PRINT_CODE("MOVE LF@%%%s string@\n", var);      \
+    PRINT_CODE("CREATEFRAME\n");                    \
+    PRINT_CODE("DEFVAR TF@%%counter\n");            \
+    PRINT_CODE("MOVE TF@%%counter int@0\n");        \
+    PRINT_CODE("DEFVAR TF@%%index\n");              \
+    PRINT_CODE("MOVE TF@%%index ");                 \
+    generate_constant(type2, symb2);                \
+    PRINT_CODE("\nLABEL substr%%%d\n", substr_label_cnt);                 \
+    PRINT_CODE("JUMPIFEQ continue%%%d TF@%%counter ", input_count);     \
+    generate_constant(type3, symb3);                \
+    PRINT_CODE("\nJUMPIFEQ continue%%%d TF@%%index GF@%%strlenMax\n", input_count); \
+    PRINT_CODE("GETCHAR GF@%%substr ");           \
+    generate_constant(type1, symb1);                \
+    PRINT_CODE(" TF@%%index\n");                    \
+    PRINT_CODE("CONCAT LF@%%%s LF@%%%s GF@%%substr\n", var, var);      \
+    PRINT_CODE("ADD TF@%%index TF@%%index int@1\n");            \
+    PRINT_CODE("ADD TF@%%counter TF@%%counter int@1\n");     \
+    PRINT_CODE("JUMP substr%%%d\n", substr_label_cnt);                    \
+    PRINT_CODE("LABEL continue%%%d\n", input_count);                                \
+    input_count++;                                      \
+    substr_label_cnt++;
+
 
 #define GEN_READ(value, err, type)                                               \
     PRINT_CODE("READ LF@%%%s %s\n", value, type);                                \
@@ -47,23 +107,37 @@ int input_count = 1;
     PRINT_CODE("JUMPIFNEQ continue%%%d LF@%%%s nil@nil\n", input_count, value);  \
     PRINT_CODE("MOVE LF@%%%s int@1\n", err);                                     \
     PRINT_CODE("LABEL continue%%%d\n", input_count);                             \
-    input_count++;
+    input_count++;                                                               \
+    runtime_error = true;
 
-char *function;
-int if_s,for_s;
 
 void generate()
 {
     stdout_print("\n======================= GENERATING CODE =======================\n");
     //PRINT_HEADER();
     PRINT_CODE(".IFJcode20\n\n");
-    
+
+    PRINT_CODE("# Variables for built-in functions\n");
+    PRINT_CODE("DEFVAR GF@%%strlenMax\n");
+    PRINT_CODE("DEFVAR GF@%%downlimit\n");
+    PRINT_CODE("DEFVAR GF@%%toplimit\n");
+    PRINT_CODE("DEFVAR GF@%%inInterval\n\n");
+    PRINT_CODE("DEFVAR GF@%%substr\n");
+
     PRINT_CODE("DEFVAR GF@!compvar\n");
+
     
     PRINT_CODE("JUMP $$main\n");
     PRINT_NL();
 
     generate_label(ast->Rptr);
+
+    if(runtime_error)
+    {
+        PRINT_CODE("LABEL runtimeError\n");
+        PRINT_CODE("WRITE string@Division\\032by\\032zero!\\010\n");
+        PRINT_CODE("EXIT int@9\n");
+    }
 }
 
 
@@ -130,16 +204,39 @@ void generate_function(Tree *ast)
         case N_IDENT_INIT:
             if (ast->Rptr->Lptr->type != SEQ)
             {
-                if(ast->Rptr->Rptr->type != N_PLUS && ast->Rptr->Rptr->type != N_MINUS &&
-                   ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL && 
-                   ast->Rptr->Rptr->type != N_FUNC)
+                if(ast->Rptr->Rptr->type == N_INT2FLOAT)
                 {
-                    PRINT_CODE("MOVE LF@%%%s ", ast->Rptr->Lptr->value);
-                    gen_expr(ast->Rptr->Rptr);
+                    if(isdigit(ast->Rptr->Rptr->value[0])){
+                        GEN_INT2FLOAT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_INT);
+                    } else {
+                        GEN_INT2FLOAT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);    
+                    }
+                }
+                else if(ast->Rptr->Rptr->type == N_FLOAT2INT)
+                {
+                    if(isdigit(ast->Rptr->Rptr->value[0])){
+                        GEN_FLOAT2INT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_FLOAT);
+                    } else {
+                        GEN_FLOAT2INT(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);
+                    }   
+                }
+                else if(ast->Rptr->Rptr->type == N_LEN)
+                {
+                    if(isdigit(ast->Rptr->Rptr->value[0])){
+                        GEN_STRLEN(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_LIT_STRING);
+                    } else {
+                        GEN_STRLEN(ast->Rptr->Lptr->value, ast->Rptr->Rptr->value, N_IDENTIFIER);
+                    }
                 }
                 else if(ast->Rptr->Rptr->type == N_FUNC)
                 {
                     gen_initvar_call(ast->Rptr->Rptr, ast->Rptr->Lptr->value);
+                }
+                else if(ast->Rptr->Rptr->type != N_PLUS && ast->Rptr->Rptr->type != N_MINUS &&
+                   ast->Rptr->Rptr->type != N_DIV && ast->Rptr->Rptr->type != N_MULL)
+                {
+                    PRINT_CODE("MOVE LF@%%%s ", ast->Rptr->Lptr->value);
+                    gen_expr(ast->Rptr->Rptr);
                 }
                 else
                 {
@@ -325,7 +422,6 @@ void generate_var_def(Tree *ast)
 {
     PRINT_CODE("DEFVAR LF@%%%s", ast->Lptr->value);
     PRINT_NL();
-    int type;
     switch (ast->Rptr->type)
     {
         case N_LIT_INT:
@@ -357,23 +453,35 @@ void generate_var_def(Tree *ast)
             break;
 
         case N_INT2FLOAT:
-            GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value);
+            if(isdigit(ast->Rptr->value[0])){
+                GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value, N_LIT_INT);
+            } else {
+                GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
+            }
+            //GEN_INT2FLOAT(ast->Lptr->value, ast->Rptr->value);
             break;
 
         case N_FLOAT2INT:
-            GEN_FLOAT2INT(ast->Lptr->value, ast->Rptr->value);
+            if(isdigit(ast->Rptr->value[0])){
+                GEN_FLOAT2INT(ast->Lptr->value, ast->Rptr->value, N_LIT_FLOAT);
+            } else {
+                GEN_FLOAT2INT(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
+            }
             break;
 
-        case N_LEN:           
-            GEN_STRLEN(ast->Lptr->value, ast->Rptr->value);
+        case N_LEN:
+            if(isdigit(ast->Rptr->value[0])){
+                GEN_STRLEN(ast->Lptr->value, ast->Rptr->value, N_LIT_STRING);
+            } else {
+                GEN_STRLEN(ast->Lptr->value, ast->Rptr->value, N_IDENTIFIER);
+            }
             break;
     }
 }
 
-// TODO: Runtime errors u funkcii inputi(), inputs(), inputf()
-// TODO: substr(), ord(), chr()
 void generate_multivar_init(Tree *vars, Tree *expr)
 {
+    int type1, type2, type3;
     switch(expr->Rptr->type)
     {
         case N_PLUS:
@@ -404,14 +512,43 @@ void generate_multivar_init(Tree *vars, Tree *expr)
             break;
 
         case N_SUBSTR:
+            if(expr->Rptr->Lptr->Rptr->value[0] == '"') type1 = N_LIT_STRING;
+            else type1 = N_IDENTIFIER;
+            if(isdigit(expr->Rptr->Lptr->Lptr->Rptr->value[0])) type2 = N_LIT_INT;
+            else type2 = N_IDENTIFIER;
+            if(isdigit(expr->Rptr->Lptr->Lptr->Lptr->Rptr->value[0])) type3 = N_LIT_INT;
+            else type3 = N_IDENTIFIER;
+
+            GEN_SUBSTR(vars->Rptr->value, vars->Lptr->Rptr->value, expr->Rptr->Lptr->Rptr->value, 
+                    expr->Rptr->Lptr->Lptr->Rptr->value, expr->Rptr->Lptr->Lptr->Lptr->Rptr->value,
+                    type1, type2, type3);
+
             if(!vars->Lptr->Lptr) return;
             generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
             break;
 
         case N_ORD:
+            if(expr->Rptr->Lptr->Rptr->value[0] == '"') type1 = N_LIT_STRING;
+            else type1 = N_IDENTIFIER;
+            if(isdigit(expr->Rptr->Lptr->Lptr->Rptr->value[0])) type2 = N_LIT_INT;
+            else type2 = N_IDENTIFIER;
+
+            GEN_STRI2INT(vars->Rptr->value, vars->Lptr->Rptr->value, expr->Rptr->Lptr->Rptr->value, 
+                        expr->Rptr->Lptr->Lptr->Rptr->value, type1, type2);
+
+            if(!vars->Lptr->Lptr) return;
+            generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
             break;
         
-        case N_CHR:
+        case N_CHR:    
+            if(isdigit(expr->Rptr->value[0])){
+                GEN_INT2CHAR(vars->Rptr->value, vars->Lptr->Rptr->value, expr->Rptr->value, N_LIT_INT);
+            } else{
+                GEN_INT2CHAR(vars->Rptr->value, vars->Lptr->Rptr->value, expr->Rptr->value, N_IDENTIFIER);
+            }
+            
+            if(!vars->Lptr->Lptr) return;
+            generate_multivar_init(vars->Lptr->Lptr, expr->Lptr);
             break;
         
         default:
@@ -506,6 +643,14 @@ void calculate_expr(Tree *ast){
             }
             else{
                 type = ast->Lptr->type;
+            }
+            PRINT_CODE("JUMPIFEQ runtimeError ");
+            generate_constant(ast->Rptr->type, ast->Rptr->value);
+            if(type == N_LIT_INT){
+                PRINT_CODE(" int@0\n");
+            }
+            else{
+                PRINT_CODE(" float@0x0p+0\n");
             }
            
             if(type == N_LIT_FLOAT){
