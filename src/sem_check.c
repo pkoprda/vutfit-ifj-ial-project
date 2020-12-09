@@ -1,57 +1,17 @@
+/*
+ * IFJ/IAL - semantic chceck
+ * Authors: Viliam Holik - xholik14, Pavol Babjak - xbabja03
+ */
+
 #include "symtable.h"
 
-//authors: xbabja03, xholik14
+int ifcnt = 0;  // if counter
+int forcnt = 0; // for counter
+int hide = 0;   // hide in scopes
 
 int old = 0;
-int ifcnt = 0;
-int forcnt = 0;
-int hide = 0;
 char *newvalue = NULL;
 FunTable *ft = NULL;
-
-/*
-void printhashtable(FunTable *fun)
-{
-    stdout_print("------------HASH TABLE--------------\n");
-
-    for (int i = 0; i < FTsize; i++)
-    {
-        stdout_print("%i:", i);
-        FunTItem *ptr = (*fun)[i];
-
-        while (ptr != NULL)
-        {
-            stdout_print(" (%s,%d,%d,%d)", ptr->key, ptr->count, ptr->retvar, ptr->types);
-            ptr = ptr->next;
-        }
-        stdout_print("\n");
-    }
-
-    stdout_print("------------------------------------\n");
-}
-
-void printsymtable(FunTable *fun)
-{
-    stdout_print("------------SYMTABLE--------------\n");
-
-    for (int i = 0; i < STsize; i++)
-    {
-        stdout_print("%i:", i);
-
-        FunTItem *tmp = ftSearch(fun, "factorial");
-        SymTable *sym = tmp->sym;
-        SymTItem *ptr = (*sym)[i];
-
-        while (ptr != NULL)
-        {
-            stdout_print(" (%s,%s,%d)", ptr->key, ptr->value, ptr->type);
-            ptr = ptr->next;
-        }
-    }
-
-    stdout_print("------------------------------------\n");
-}
-*/
 
 int cnt(Tree *ast, int i)
 {
@@ -176,7 +136,6 @@ void statm(Tree *ast, SymTable *sym)
         else if (ast->Rptr->type == N_IDENTIFIER)
         {
             sItem = stSearch(sym, ast->Rptr->value);
-            // printf("--%s\n", sItem->value);
             if (sItem == NULL)
             {
                 error_exit(SEM_ERROR_UNDEF, "Variable has not been already defined");
@@ -273,7 +232,6 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
     case N_LIT_STRING:
     case N_LIT_FLOAT:;
         newvalue = ast->value;
-        // printf("+++%s\n", value);
         return (ast->type - 7);
         break;
 
@@ -478,15 +436,11 @@ int getIDtype(Tree *ast, SymTable *sym, FunTable *fun)
         {
             error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
         }
-
-        // printf("--%s\n", ast->value);
         SymTItem *Sitem = searchdown(Sitem1, hide, forcnt, ifcnt);
-        // printf("holub\n");
         if (Sitem != NULL)
         {
             return Sitem->type;
         }
-        // printf("cat\n");
         Sitem = searchforID(Sitem1, hide, forcnt, ifcnt);
         return Sitem->type;
         break;
@@ -514,36 +468,35 @@ void compare(Tree *ast)
     }
 }
 
-void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
+void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname) //navštívenie funkcie a vykonanie sémantických kontrol
 {
     if (ast->type == SEQ)
     {
-        switch (ast->Rptr->type)
+        switch (ast->Rptr->type) //podla typu načítaného nodu sa vykonáva jednotlivý case
         {
         case N_IDENT_DEF:;
-            int type = getIDtype(ast->Rptr->Rptr, sym, fun);
+            int type = getIDtype(ast->Rptr->Rptr, sym, fun); //získanie dátového typu identifkátora
             Tree *tmp = ast->Rptr->Lptr;
             if (tmp->type != SEQ)
             {
-                // printf("///%s\n", newvalue);
-                newSym(tmp->value, type, newvalue, hide, forcnt, ifcnt, sym);
+                newSym(tmp->value, type, newvalue, hide, forcnt, ifcnt, sym); //vlozenie noveho symbolu do hashtable pre symboly
                 newvalue = NULL;
                 break;
             }
 
-            char help[10];
-            sprintf(help, "%d", type);
+            char help[10];             //pomocná premenná
+            sprintf(help, "%d", type); //prevod type do pomocnej premennej help
             int i = 0;
             while (tmp != NULL)
             {
                 if (strcmp("_", tmp->Rptr->value) == 0)
                 {
-                    tmp = tmp->Lptr;
+                    tmp = tmp->Lptr; //pokial sme načítali ako identifkátor _ , posunieme sa v AST doľava
                     i++;
                     continue;
                 }
                 newSym(tmp->Rptr->value, (help[i] - '0'), newvalue, hide, forcnt, ifcnt, sym);
-                newvalue = NULL;
+                newvalue = NULL; //
                 tmp = tmp->Lptr;
                 i++;
             }
@@ -567,7 +520,6 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
                         break;
                     }
                 }
-                //printf("string %s \n", tmp->value);
                 if ((strcmp(tmp->value, "_") != 0) && sItem == NULL)
                 {
                     error_exit(SEM_ERROR_UNDEF, "Variable not defined yet");
@@ -621,18 +573,15 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
             {
                 error_exit(SEM_ERROR_UNDEF, "Func same name as variable");
             }
-            // printf("pea\n");
             FunTItem *fItem = ftSearch(fun, ast->Rptr->value);
             if (fItem == NULL)
             {
                 error_exit(SEM_ERROR_UNDEF, "Func not defined yet");
             }
-            // printf("pea\n");
             if (fItem->retvar != 0)
             {
                 error_exit(SEM_ERROR_OTHERS, "Must be assigned to a variable");
             }
-            // printf("pea\n");
             if (fItem->types != getIDtype(ast->Rptr->Lptr, sym, fun))
             {
                 error_exit(SEM_ERROR_PARAMS, "Params not corresponding with call values");
@@ -641,7 +590,6 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
 
         case N_PRINT:;
             tmp = ast->Rptr->Lptr;
-            // printf("ahoj\n");
             while (tmp != SEQ)
             {
                 if (tmp->Rptr->type == N_IDENTIFIER)
@@ -739,13 +687,13 @@ void InFuncGo(Tree *ast, SymTable *sym, FunTable *fun, char *fname)
     }
 }
 
-void FUN_def(Tree *ast, FunTable *fun)
+void FUN_def(Tree *ast, FunTable *fun) //uloženie atribútov funkcie do tabulky symbolov
 {
     char *name = ast->value;
-    SymTable *sym = (SymTable *)malloc(sizeof(SymTable));
-    stInit(sym);
+    SymTable *sym = (SymTable *)malloc(sizeof(SymTable)); //alokácia pamäte
+    stInit(sym);                                          //inicializácia tabulky symbolov
 
-    if (strcmp(name, "main") == 0)
+    if (strcmp(name, "main") == 0) //pokial sa jedná o funciu main, nastavíme predom známe atribúty do tabulky symbolov
     {
         newFun(fun, name, 0, 0, 0, sym);
     }
@@ -756,11 +704,11 @@ void FUN_def(Tree *ast, FunTable *fun)
             newFun(fun, name, 0, 0, 0, sym);
             return;
         }
-        int retvar = cnt(ast->Lptr, -1);
-        int count = cnt(ast->Lptr, retvar);
+        int retvar = cnt(ast->Lptr, -1);    //počet návratových hodnôt
+        int count = cnt(ast->Lptr, retvar); //suma parametrov a návratových hodnôť
         newFun(fun, name, retvar, count, 0, sym);
         FunTItem *fItem = ftSearch(fun, name);
-        int types = getTypes(ast->Lptr, retvar, count, sym);
+        int types = getTypes(ast->Lptr, retvar, count, sym); //types - číselne vyjadrená hodnota parametrov a returtypes podla dátového typu
         fItem->types = types;
     }
 }
@@ -768,16 +716,16 @@ void FUN_def(Tree *ast, FunTable *fun)
 void FUN_in(Tree *ast, FunTable *fun)
 {
     char *name = ast->value;
-    FunTItem *fItem = ftSearch(fun, name);
+    FunTItem *fItem = ftSearch(fun, name); //vyhladanie funkcie v tabulke pre funkcie
     if (ast->Rptr != NULL)
     {
-        InFuncGo(ast->Rptr, fItem->sym, fun, name);
+        InFuncGo(ast->Rptr, fItem->sym, fun, name); //navštívenie funkcie a vykonanie sémantických kontrol
     }
 }
 
-void FuncVisit(Tree *ast, FunTable *fun)
+void FuncVisit(Tree *ast, FunTable *fun) //navštívnenie jednotlivých funkcíí a následné vykonanie sémantických kontrol
 {
-    if (ast->Lptr == NULL)
+    if (ast->Lptr == NULL) //pokial neexistuje žiadny node vľavo
     {
         return;
     }
@@ -785,8 +733,9 @@ void FuncVisit(Tree *ast, FunTable *fun)
 
     if (ast->type == SEQ)
     {
-        if (ast->Rptr->type == N_DEF_FUNC)
+        if (ast->Rptr->type == N_DEF_FUNC) //narazili sme na node definície funkcie
         {
+            //nastavenie counterov pre používanie funkcíí v scopoch
             ifcnt = 0;
             forcnt = 0;
             hide = 0;
@@ -797,9 +746,9 @@ void FuncVisit(Tree *ast, FunTable *fun)
     }
 }
 
-void FuncLookup(Tree *ast, FunTable *fun)
+void FuncLookup(Tree *ast, FunTable *fun) //funkcia ktorá vyhľadá všetky funkcie a uloží ich do hashtable
 {
-    if (ast->Lptr == NULL)
+    if (ast->Lptr == NULL) //pokial neexistuje žiadny node vľavo
     {
         return;
     }
@@ -807,8 +756,9 @@ void FuncLookup(Tree *ast, FunTable *fun)
 
     if (ast->type == SEQ)
     {
-        if (ast->Rptr->type == N_DEF_FUNC)
+        if (ast->Rptr->type == N_DEF_FUNC) //narazili sme na node definície funkcie
         {
+            //nastavenie counterov pre používanie funkcíí v scopoch
             ifcnt = 0;
             forcnt = 0;
             hide = 0;
@@ -819,7 +769,7 @@ void FuncLookup(Tree *ast, FunTable *fun)
     }
 }
 
-void FillPredefFunc(FunTable *fun)
+void FillPredefFunc(FunTable *fun) //vloženie vstavaných funkcíí do tabulky
 {
     newFun(fun, "inputs", 2, 2, 21, NULL);
     newFun(fun, "inputi", 2, 2, 11, NULL);
@@ -834,16 +784,11 @@ void FillPredefFunc(FunTable *fun)
 
 int semantics()
 {
-    //stdout_print("===================semantika================== \n \n");
-    FunTable *fun = (FunTable *)malloc(sizeof(FunTable));
-    ftInit(fun);
-    FillPredefFunc(fun);
-    FuncLookup(ast->Rptr, fun);
-    FuncVisit(ast->Rptr, fun);
+    FunTable *fun = (FunTable *)malloc(sizeof(FunTable)); //alokácia pamäte pre Funtable
+    ftInit(fun);                                          //inicializácia hashtable
+    FillPredefFunc(fun);                                  //vloženie vstavaných funkcíí do tabulky
+    FuncLookup(ast->Rptr, fun);                           //funkcia ktorá vyhľadá všetky funkcie a uloží ich do hashtable
+    FuncVisit(ast->Rptr, fun);                            //navštívnenie jednotlivých funkcíí a následné vykonanie sémantických kontrol
     ft = fun;
-    //printhashtable(fun);
-    //printsymtable(fun);
-
-    //stdout_print("===========koniec semantiky====================\n \n");
     return 0;
 }

@@ -1,7 +1,14 @@
+/**
+ * Projekt: Prekladač jazyka  IFJ20 do medzikódu IFJcode20
+ * Popis: Implementácia lexikálnej analýzy
+ * Autor: Peter Koprda - xkoprd00
+ */
+
 #include "libmine.h"
 
 Stack stack;
 
+// TODO: vymazat
 char *displayToken[] = {
     "identifier", ":=", "=",
     "INT", "FLOAT", "STR",
@@ -14,7 +21,6 @@ int lexer()
 {
     char c, firstDigit;
 
-    /* Neskor extern aby bol global */
     initStack(&stack);
     int stav = STATE_START;
     string bufferHelp;
@@ -200,7 +206,8 @@ int lexer()
                 c = getc(stdin);
                 while (c != '\n')
                 {
-                    if(c == EOF){
+                    if (c == EOF)
+                    {
                         break;
                     }
                     c = getc(stdin);
@@ -324,7 +331,7 @@ int lexer()
 
             if (isdigit(c))
             {
-                if(firstDigit == '0')
+                if (firstDigit == '0')
                 {
                     error_exit(LEX_ERROR, "Lexical error!");
                 }

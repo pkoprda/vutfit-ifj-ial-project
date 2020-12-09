@@ -1,39 +1,41 @@
 /*
  * IAL - hashtable
- * Header file for symtable.c 
- * Creators: Viliam Holik - xholik14, Pavol Babjak - xbabja03
+ * Hlavickovy subor pre symtable.c 
+ * Autori: Viliam Holik - xholik14, Pavol Babjak - xbabja03
  */
 
 #include "libmine.h"
 
-// size of hashtable for funcions and symbols
+// velkost tabuliek
 #define FTsize 19
 #define STsize 11
 
 typedef char *tKey;
 
+// struktura pre jednotlive symboly
 typedef struct SymTItem
-{ // item in hashtable of symbols
+{
     tKey key;
     int type; // int(1) string(2) double(3)
     char *value;
-    int hide;
+    int hide; // zanorenie
     int forcnt;
     int ifcnt;
-    struct SymTItem *down;
+    struct SymTItem *down; // pre symboly s rovnakym menom ale v inych scopes
     struct SymTItem *next;
 } SymTItem;
 
-// hashtable for symbols
+// hashtable pre symboly
 typedef SymTItem *SymTable[STsize];
 
+// struktura pre jednotlive funkcie
 typedef struct FunTItem
-{ // item in hashtable of functions
+{
     tKey key;
-    int types;     // func example(int a, double b) (int, string) = 1312
-    int retvar;    // number of return values
-    int count;     // number of return values + params
-    SymTable *sym; // ptr to hashtable of symbols
+    int types;     // func priklad(int a, double b) (int, string) = 1312
+    int retvar;    // pocet return hodnot
+    int count;     // pocet return hodnot + parametre
+    SymTable *sym; // ukazatel na hashtable pre symboly
     struct FunTItem *next;
 } FunTItem;
 
