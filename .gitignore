@@ -50,3 +50,19 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# VSCode
+.vscode/
+.history/
+
+our-tests/
+outputs/
+log
+
+*.sh
+
+bin/ifj20
+rozdeleni
+doc/llgrammartable.xls
+tests/mytest.go
+tests/test.go

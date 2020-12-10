@@ -1,4 +1,0 @@
-else
-if
-for
-sdsadsa

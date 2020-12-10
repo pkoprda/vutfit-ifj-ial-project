@@ -1,20 +1,17 @@
+/**
+ * Projekt: Prekladac jazyka  IFJ20 do medzikódu IFJcode20
+ * Popis: Implementacia lexikalnej analýzy
+ * Autor: Peter Koprda - xkoprd00
+ */
+
 #include "libmine.h"
 
 Stack stack;
 
-char *displayToken[] = {
-    "identifier", ":=", "=",
-    "INT", "FLOAT", "STR",
-    "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=",
-    "space", "EOL", ",", ";", "(", ")", "{", "}",
-    "package", "if", "else", "for", "func", "int", "float64", "string", "return",
-    "main", "inputs", "inputi", "inputf", "print", "int2float", "float2int", "len", "substr", "ord", "chr"};
-
 int lexer()
 {
-    char c, firstDigit; //*buffer; //*bufferStart, *bufferNew;
-    //size_t lenLineMax, len;
-    /* Neskor extern aby bol global */
+    char c, firstDigit;
+
     initStack(&stack);
     int stav = STATE_START;
     string bufferHelp;
@@ -32,20 +29,19 @@ int lexer()
         case STATE_START:
 
             // \r iba pre subory s CRLF
-            if (c == '\r' || c == EOF);
-            
+            if (c == '\r' || c == EOF)
+                ;
+
             // novy riadok
-            else if(c == '\n')
+            else if (c == '\n')
             {
-                debug_print("EOL");
                 stackPush(&stack, initToken(TOKEN_EOL, NULL));
             }
 
             // medzera
             else if (c == '\t' || c == ' ')
             {
-                debug_print("WHITESPACE");
-                stackPush(&stack, initToken(TOKEN_WHITESPACE, NULL));
+                ;
             }
 
             // delenie alebo komentar
@@ -103,7 +99,7 @@ int lexer()
                 }
                 else
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
 
@@ -132,12 +128,12 @@ int lexer()
                 c = getc(stdin);
                 if (c == '=')
                 {
-                    stackPush(&stack, initToken(TOKEN_MORE_EQUAL, NULL));
+                    stackPush(&stack, initToken(TOKEN_GREATER_EQUAL, NULL));
                 }
                 else
                 {
                     ungetc(c, stdin);
-                    stackPush(&stack, initToken(TOKEN_MORE, NULL));
+                    stackPush(&stack, initToken(TOKEN_GREATER, NULL));
                 }
             }
             else if (c == '=')
@@ -159,11 +155,12 @@ int lexer()
                 c = getc(stdin);
                 if (c == '=')
                 {
+                    // nerovna sa
                     stackPush(&stack, initToken(TOKEN_NOT_EQUAL, NULL));
                 }
                 else
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
 
@@ -184,8 +181,7 @@ int lexer()
             // nezname znaky
             else
             {
-                debug_print("\n%c %d", c, c);
-                error_exit(LEX_ERROR, "Lexikalna chyba!");
+                error_exit(LEX_ERROR, "Lexical error!");
             }
 
             break;
@@ -196,8 +192,16 @@ int lexer()
             if (c == '/')
             {
                 // Jednoriadkovy komentar
-                while ((c = getc(stdin)) != '\n')
-                    ;
+                c = getc(stdin);
+                while (c != '\n')
+                {
+                    if (c == EOF)
+                    {
+                        break;
+                    }
+                    c = getc(stdin);
+                }
+                stackPush(&stack, initToken(TOKEN_EOL, NULL));
                 stav = STATE_START;
             }
             else if (c == '*')
@@ -212,15 +216,22 @@ int lexer()
                         stav = STATE_START;
                         break;
                     }
+                    ungetc(nextChar, stdin);
+
+                    if (c == '\n')
+                    {
+                        stackPush(&stack, initToken(TOKEN_EOL, NULL));
+                    }
 
                     if (feof(stdin))
                     {
-                        error_exit(LEX_ERROR, "Lexikalna chyba!");
+                        error_exit(LEX_ERROR, "Lexical error!");
                     }
                 }
             }
             break;
 
+        // identifikatory
         case STATE_IDENTIF:
 
             while (1)
@@ -237,7 +248,7 @@ int lexer()
                 }
             }
 
-            // keywordy a funkcie
+            // klucove slova a funkcie
             if (MIN_LEN_KEYWORD <= strlen(buffer->str) && strlen(buffer->str) <= MAX_LEN_KEYWORD)
             {
                 if (!strcmp(buffer->str, "else"))
@@ -259,7 +270,7 @@ int lexer()
                 else if (!strcmp(buffer->str, "string"))
                     stackPush(&stack, initToken(KEYWORD_STRING, NULL));
                 else if (!strcmp(buffer->str, "main"))
-                    stackPush(&stack, initToken(FUNC_MAIN, NULL));
+                    stackPush(&stack, initToken(FUNC_MAIN, "main"));
                 else if (!strcmp(buffer->str, "inputs"))
                     stackPush(&stack, initToken(FUNC_INPUTS, NULL));
                 else if (!strcmp(buffer->str, "inputi"))
@@ -284,21 +295,18 @@ int lexer()
                 {
                     // identifikator
                     stackPush(&stack, initToken(TOKEN_IDENTIF, my_strdup(buffer->str)));
-                    debug_print("IDENTIFIER: %s", buffer->str);
                     clearBuffer(buffer);
                     freeBuffer(buffer);
                     buffer = &bufferHelp;
                     stav = STATE_START;
                     break;
                 }
-                debug_print("KEYWORD: %s", buffer->str);
             }
 
             // identifikator
             else
             {
-                stackPush(&stack, initToken(TOKEN_IDENTIF, buffer->str));
-                debug_print("IDENTIFIER: %s", buffer->str);
+                stackPush(&stack, initToken(TOKEN_IDENTIF, my_strdup(buffer->str)));
             }
             clearBuffer(buffer);
             freeBuffer(buffer);
@@ -306,13 +314,15 @@ int lexer()
             stav = STATE_START;
             break;
 
+        // cislo - int alebo float64
         case STATE_NUMBER:
 
             if (isdigit(c))
             {
-                if(firstDigit == '0')
+                if (firstDigit == '0')
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    // iba jednociferne cisla mozu zacinat 0
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
                 addChar(buffer, c);
                 stav = STATE_NUMBER;
@@ -328,17 +338,19 @@ int lexer()
                 }
                 else
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    // desatinna cast moze zacinat iba cislom
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
             else if (c == 'e' || c == 'E')
             {
+                // exponent v desatinnej casti
                 stav = STATE_EXPONENT_NUMBER;
             }
             else
             {
                 ungetc(c, stdin);
-                stackPush(&stack, initToken(TOKEN_INT, buffer->str));
+                stackPush(&stack, initToken(TOKEN_INT, my_strdup(buffer->str)));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
                 buffer = &bufferHelp;
@@ -347,21 +359,22 @@ int lexer()
 
             break;
 
+        // desatinne cislo
         case STATE_FLOAT_NUMBER:
-
-            addChar(buffer, c);
             if (isdigit(c))
             {
+                addChar(buffer, c);
                 stav = STATE_FLOAT_NUMBER;
             }
             else if (c == 'e' || c == 'E')
             {
+                addChar(buffer, c);
                 stav = STATE_EXPONENT_NUMBER;
             }
             else
             {
                 ungetc(c, stdin);
-                initToken(TOKEN_FLOAT, buffer->str);
+                stackPush(&stack, initToken(TOKEN_FLOAT, my_strdup(buffer->str)));
                 clearBuffer(buffer);
                 freeBuffer(buffer);
                 buffer = &bufferHelp;
@@ -369,6 +382,7 @@ int lexer()
             }
             break;
 
+        // desatinne cislo s exponentom
         case STATE_EXPONENT_NUMBER:
             if (c == '+' || c == '-')
             {
@@ -381,7 +395,7 @@ int lexer()
                 }
                 else
                 {
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
             }
             else if (isdigit(c))
@@ -393,14 +407,15 @@ int lexer()
             {
                 clearBuffer(buffer);
                 freeBuffer(buffer);
-                error_exit(LEX_ERROR, "Lexikalna chyba!");
+                error_exit(LEX_ERROR, "Lexical error!");
             }
             break;
 
+        // koniec desatinneho cisla s exponentom
         case STATE_EXPONENT_NUMBER_FINAL:
-            addChar(buffer, c);
             if (isdigit(c))
             {
+                addChar(buffer, c);
                 stav = STATE_EXPONENT_NUMBER_FINAL;
             }
             else
@@ -414,17 +429,17 @@ int lexer()
             }
             break;
 
+        // reťazec
         case STATE_STRING:
             while (1)
             {
                 c = getc(stdin);
 
-                // koniec stringu
+                // koniec reťazca
                 if (c == '"')
                 {
                     addChar(buffer, c);
-                    debug_print("STRING: %s", buffer->str);
-                    stackPush(&stack, initToken(TOKEN_STRING, buffer->str));
+                    stackPush(&stack, initToken(TOKEN_STRING, my_strdup(buffer->str)));
                     clearBuffer(buffer);
                     freeBuffer(buffer);
                     buffer = &bufferHelp;
@@ -437,7 +452,7 @@ int lexer()
                 {
                     clearBuffer(buffer);
                     freeBuffer(buffer);
-                    error_exit(LEX_ERROR, "Lexikalna chyba!");
+                    error_exit(LEX_ERROR, "Lexical error!");
                 }
 
                 // escape sekvencie
@@ -471,21 +486,21 @@ int lexer()
                             {
                                 clearBuffer(buffer);
                                 freeBuffer(buffer);
-                                error_exit(LEX_ERROR, "Lexikalna chyba!");
+                                error_exit(LEX_ERROR, "Lexical error!");
                             }
                         }
                         else
                         {
                             clearBuffer(buffer);
                             freeBuffer(buffer);
-                            error_exit(LEX_ERROR, "Lexikalna chyba!");
+                            error_exit(LEX_ERROR, "Lexical error!");
                         }
                     }
                     else
                     {
                         clearBuffer(buffer);
                         freeBuffer(buffer);
-                        error_exit(LEX_ERROR, "Lexikalna chyba!");
+                        error_exit(LEX_ERROR, "Lexical error!");
                     }
                 }
 
@@ -498,11 +513,10 @@ int lexer()
             break;
 
         default:
-            error_exit(LEX_ERROR, "Lexikalna chyba!");
+            error_exit(LEX_ERROR, "Lexical error!");
         }
     }
 
     stackFlip(&stack);
-    stackPrint(&stack, displayToken);
     return SCANNER_OK;
 }
