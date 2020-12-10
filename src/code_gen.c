@@ -308,8 +308,7 @@ void generate_function(Tree *ast)
                             type = ast->Rptr->Rptr->Rptr->type;
                         }
                         if(type == N_LIT_STRING)
-                        {
-                            PRINT_CODE("MOVE LF@%%%s string@\n", ast->Rptr->Lptr->value);
+                        { 
                             gen_string_concat(ast->Rptr->Rptr, ast->Rptr->Lptr->value);
                             break;
                         }
@@ -901,16 +900,10 @@ void calculate_expr(Tree *ast)
 void gen_string_concat(Tree *ast, char *id)
 {
     PRINT_CODE("CONCAT LF@%%%s ", id);
+    PRINT_CODE(" LF@%%%s ", id);
     generate_constant(ast->Rptr->type, ast->Rptr->value);
-    PRINT_CODE(" LF@%%%s\n", id);
-    if (ast->Lptr->type == N_LIT_STRING)
-    {
-        PRINT_CODE("CONCAT LF@%%%s ", id);
-        generate_constant(ast->Lptr->type, ast->Lptr->value);
-        PRINT_CODE(" LF@%%%s\n", id);
-        return;
-    }
-    gen_string_concat(ast->Lptr, id);
+    PRINT_NL();
+    return;
 }
 
 void generate_constant(int type, char *value)

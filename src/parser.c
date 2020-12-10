@@ -68,7 +68,6 @@ bool func_main_defined = false;
 int parser()
 {
     ast = parse();
-    Print_tree(ast);
     if (func_main_defined != true)
     {
         error_exit(SEM_ERROR_UNDEF, "Semantic error! Function main not defined.");
@@ -947,91 +946,4 @@ Tree *expr(int precedence)
     }
 
     return root;
-}
-
-void prt_ast(Tree *t)
-{
-    if (t == NULL)
-        debug_print("NULL\n");
-    else
-    {
-        debug_print("%s ", displayNode[t->type]);
-        if (t->type == N_IDENTIFIER || t->type == N_LIT_INT || t->type == N_LIT_FLOAT || t->type == N_LIT_STRING)
-        {
-            debug_print("%s\n", t->value);
-        }
-        else
-        {
-            debug_print("\n");
-            prt_ast(t->Lptr);
-            prt_ast(t->Rptr);
-        }
-    }
-}
-
-// TODO: vymazat
-void Print_tree2(Tree *TempTree, char *sufix, char fromdir)
-{
-    /* vykresli sktrukturu binarniho stromu */
-    if (TempTree != NULL)
-    {
-        char *suf2 = (char *)malloc(strlen(sufix) + 4);
-        strcpy(suf2, sufix);
-
-        if (fromdir == 'L')
-        {
-            suf2 = strcat(suf2, "  |");
-            stdout_print("%s\n", suf2);
-        }
-        else
-        {
-            suf2 = strcat(suf2, "   ");
-        }
-
-        Print_tree2(TempTree->Rptr, suf2, 'R');
-        if (TempTree->value)
-        {
-            stdout_print("%s  +-[ (%d) %s \"%s\" ]\n", sufix, TempTree->type, displayNode[TempTree->type], TempTree->value);
-        }
-        else
-        {
-            stdout_print("%s  +-[ (%d) %s ]\n", sufix, TempTree->type, displayNode[TempTree->type]);
-        }
-
-        strcpy(suf2, sufix);
-
-        if (fromdir == 'R')
-            suf2 = strcat(suf2, "  |");
-        else
-            suf2 = strcat(suf2, "   ");
-
-        Print_tree2(TempTree->Lptr, suf2, 'L');
-
-        if (fromdir == 'R')
-        {
-            stdout_print("%s\n", suf2);
-        }
-
-        free(suf2);
-    }
-}
-
-// TODO: vymazat
-void Print_tree(Tree *TempTree)
-{
-    stdout_print("===========================================\n");
-    stdout_print("Struktura binarniho stromu:\n");
-    stdout_print("\n");
-
-    if (TempTree != NULL)
-    {
-        Print_tree2(TempTree, "", 'X');
-    }
-    else
-    {
-        stdout_print("Strom je prazdny...\n");
-    }
-
-    stdout_print("\n");
-    stdout_print("===========================================\n");
 }

@@ -263,10 +263,6 @@ Tree *createNode(int type, Tree *Lptr, Tree *Rptr);
 /* Vytvorenie listu v abstraktnom syntaktickom strome */
 Tree *createLeaf(int type, char *value);
 
-void prt_ast(Tree *t);
-void Print_tree2(Tree *TempTree, char *sufix, char fromdir);
-void Print_tree(Tree *TempTree);
-
 int semantics();
 
 extern Stack stack;
