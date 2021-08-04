@@ -1,5 +1,6 @@
 # Formal Languages and Compilers
 ## Project IFJ/IAL 2020
+Compiler of custom language IFJ20 (subset of language Go) written in C. Program translates source code from standard input into IFJcode20 (machine code).
 
 Authors
 ------------ 
